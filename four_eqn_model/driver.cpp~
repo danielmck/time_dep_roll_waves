@@ -1,0 +1,73 @@
+#include "SDKTSolver.h"
+#include "equations/SWPouliquenEqn.h"
+#include "RK3TimeStepper.h"
+
+#include <cmath>
+#include <fenv.h>
+#include <sys/time.h>
+#include <iomanip>
+#include <vector>
+#include <sstream>
+#include <functional>
+
+
+class ChannelRollWave
+{
+	typedef SWPouliquenEqn<1> Eqn;
+	typedef LimiterWENO LIMITER;
+	typedef RK2TimeStepper TIMESTEPPER;
+	typedef SDKTSolver<Eqn, LIMITER> Solver;
+
+public:
+	ChannelRollWave(double F0_, double h0_)
+	{
+		h0 = h0_;
+		F0 = F0_;
+		u0 = F0_ * sqrt(h0_);
+	}
+
+
+	void ICs(double *u, double x)
+	{
+			u[Eqn::H] = 0.0; 
+			u[Eqn::HU] = 0.0;
+	}
+
+	void Run(int n)
+	{
+		double endTime = 1.0;
+
+		Eqn eqn;
+
+		Solver solver(n, eqn, new TIMESTEPPER());
+		solver.SetDomain(-5.0, 10.0);
+
+		solver.SetExtrapolatedBoundaryConditions();
+
+
+		using namespace std::placeholders;
+		solver.SetInitialConditions(std::bind(&ShockErosion::ICs, this, _1, _2));
+
+		solver.IntegrateTo(endTime);
+
+		std::ostringstream oss;
+		oss << F0 << "_" << h0;
+		solver.OutputResults(solver.GenerateOutputFilename(oss.str().c_str()));
+
+	}
+private:
+	double u0, h0, F0;
+};
+
+int main(int argc, char *argv[])
+{
+	int npts = 5000;
+	{
+		ChannelRollWave crw(0.5, 0.5);
+		crw.Run(npts);
+	}
+
+
+
+	return 0;
+}

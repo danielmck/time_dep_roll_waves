@@ -1,0 +1,7 @@
+SOURCES=driver.cpp
+EXECUTABLE=shock_erosion
+CFLAGS=-I../../
+
+include ../../global.mk
+
+
