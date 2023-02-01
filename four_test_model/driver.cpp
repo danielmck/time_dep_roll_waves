@@ -1,5 +1,5 @@
 #include "SDKTSolver.h"
-#include "SWFourEqn.h"
+#include "SWFourEqnTest.h"
 #include "RK2TimeStepper.h"
 
 #include <cmath>
@@ -13,7 +13,8 @@
 
 class ChannelRollWave
 {
-	typedef SWMuIvEqn1DFull Eqn;
+	typedef SWMuIvEqn1DFullTest Eqn;
+	// typedef SWMuIvEqn1DViscous VisEqn;
 	typedef LimiterWENO LIMITER;
 	typedef RK2TimeStepper TIMESTEPPER;
 	typedef SDKTSolver<Eqn, LIMITER> Solver;
@@ -43,7 +44,7 @@ public:
 		using namespace std::placeholders;
 		solver.SetInitialConditions([this,u0,phi0,pbterm0](double *u, double x, double y)
 									{
-										u[Eqn::H]=h0*(1+1e-3*sin(2.0*M_PI*x/domainLength));
+										u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
 										u[Eqn::HU]=h0*u0;
 										u[Eqn::HPHI]=h0*phi0;
 										u[Eqn::PBH]=pbterm0;
@@ -60,7 +61,7 @@ int main(int argc, char *argv[])
 
 	int npts = 1000;
 	{
-		ChannelRollWave crw(0.1,10);
+		ChannelRollWave crw(0.1,2);
 		crw.Run(npts);
 	}
 

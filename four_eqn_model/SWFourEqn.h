@@ -99,7 +99,6 @@ public:
 		u = UFromIv(Iv,h,(rhoBulk-pp.rhof)*this->gcostheta*h);
 		phi = pp.phim/(1+sqrt(Iv));
 		double pb = pp.rhof*this->gcostheta*h;
-		std::cout << pb << std::endl;
 		pbterm = h*(pb-rhoBulk*this->gcostheta*chi*h);
 	}
 	double SteadyUniformFr(double h, double u)
@@ -269,15 +268,15 @@ public:
 		double iv = this->Iv(absu, h, ppval);
 
 		// mu * (rho-rho_f)/rho
-		double mubf = (1/rhoBulk)*ppval*this->MuIv(iv);
+		double mubf = ppval*this->MuIv(iv);
 
-		double absFriction = -mubf - tau0/rhoBulk + (rhoBulk-pp.rhof)/rhoBulk*D*absu;
+		double absFriction = (1/rhoBulk)*(-mubf - tau0); // + (rhoBulk-pp.rhof)*D*uval
 
 		double tanpsi = phi - pp.phim/(1+sqrt(iv));
 
 		double dilatancy = 3/alpha/h*absu*tanpsi;
 
-		double psi1 = D*(rhoBulk-pp.rhof)/rhoBulk;
+		double psi1 = D*P;
 		double psi5 = zeta*D - dilatancy;
 		stvect[H] = psi1;
 		stvect[HPHI] = -D*phi*pp.rhof/rhoBulk;

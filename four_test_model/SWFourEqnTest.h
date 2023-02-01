@@ -44,19 +44,20 @@ class SWMuIvEqnBase : public Equation
 {
 public:
 	/// Constructor, provide g, theta in degrees, and struct with MuIv friction law params
-	SWMuIvEqnBase(double g_, double thetaDeg_, double tau0_, MuIvParams pp_, int nExtras_ = 0) 
-		: SWMuIvEqnBase(g_, thetaDeg_, tau0_, nExtras_)
+	SWMuIvEqnBase(double g_, double thetaDeg_, double tau0_, double d_, double alpha_, MuIvParams pp_, int nExtras_ = 0) 
+		: SWMuIvEqnBase(g_, thetaDeg_, tau0_, d_, alpha_, nExtras_)
 	{
 		SetMuIvParams(pp_);
 	}
 
 	/// Provide g, theta in degrees.
-	SWMuIvEqnBase(double g_, double thetaDeg_, double tau0_, int nExtras_ = 0) :
+	SWMuIvEqnBase(double g_, double thetaDeg_, double tau0_, double d_, double alpha_, int nExtras_ = 0) :
 		Equation(DIM+1, N_UNSOLVED, nExtras_),  zeroHeightThreshold(1e-7), huThreshold(1e-14)
 	{
-		SetGTheta(g_, thetaDeg_, tau0_);
-		buoyancyFactor = 0;
+		SetGTheta(g_, thetaDeg_, tau0_, d_, alpha_);
+		P = 0;
 		rhoBulk = 0;
+		chi = 0;
 		stoppedMaterialHandling = false;
 		this->RegisterParameter("smh", Parameter(&stoppedMaterialHandling));
 	}
@@ -73,7 +74,12 @@ public:
 		this->RegisterParameter("rhof", Parameter(&pp.rhof));
 
 		rhoBulk = (pp.phi*pp.rhog+(1-pp.phi)*pp.rhof);
-		buoyancyFactor = rhoBulk/(rhoBulk-pp.rhof);
+		P = (rhoBulk-pp.rhof)/rhoBulk;
+		chi = (pp.rhof+3*rhoBulk)/(4*rhoBulk);
+
+		this->RegisterParameter("rho", Parameter(&rhoBulk));
+		this->RegisterParameter("P", Parameter(&P));
+		this->RegisterParameter("chi", Parameter(&chi));
 	}
 
 	const MuIvParams &GetMuIvParams() const
@@ -82,25 +88,36 @@ public:
 	}
 	
 
-	double SteadyUniformU(double h)
+	void SteadyUniformU(double h, double &u, double &phi, double &pbterm)
 	{
-		double max=1e8, min=0;
+		double max=1e8, min=0, Iv;
 		while (max-min > 1e-14)
 		{
-			((MuIv(Iv(0.5*(max+min),h))-buoyancyFactor*tantheta+tau0/((rhoBulk-pp.rhof)*gcostheta*h)>0)?max:min)=0.5*(max+min);
+			((MuIv(0.5*(max+min))-tantheta/P+tau0/((rhoBulk-pp.rhof)*gcostheta*h)>0)?max:min)=0.5*(max+min);
 		}
-		return 0.5*(max+min);
+		Iv = 0.5*(max+min);
+		u = UFromIv(Iv,h,(rhoBulk-pp.rhof)*this->gcostheta*h);
+		phi = pp.phim/(1+sqrt(Iv));
+		double pb = pp.rhof*this->gcostheta*h;
+		pbterm = h*(pb-rhoBulk*this->gcostheta*chi*h);
 	}
-	double SteadyUniformFr(double h)
+	double SteadyUniformFr(double h, double u)
 	{
-		return SteadyUniformU(h)/sqrt(gcostheta*h);
+		return u/sqrt(gcostheta*h);
 	}
 		  
-	void SetGTheta(double g_, double thetaDeg_, double tau0_)
+	double UFromIv(double Iv, double h, double ppval)
+	{
+		return Iv*ppval*h/(3*pp.etaf);
+	}
+
+	void SetGTheta(double g_, double thetaDeg_, double tau0_, double d_, double alpha_)
 	{
 		const double pi = 3.14159265358979323846264338327950288;
 		thetaDeg = thetaDeg_;
 		tau0 = tau0_;
+		d = d_;
+		alpha = alpha_;
 
 		theta = thetaDeg*pi/180.0;
 		g = g_;
@@ -111,6 +128,8 @@ public:
 		this->RegisterParameter("theta", Parameter(&thetaDeg));
 		this->RegisterParameter("g", Parameter(&g));
 		this->RegisterParameter("tau0", Parameter(&tau0));
+		this->RegisterParameter("d", Parameter(&d));
+		this->RegisterParameter("alpha", Parameter(&alpha));
 	}
 
 
@@ -145,31 +164,33 @@ protected:
 	}
 
 	// Iv of a quadratic velocity profile with depth average velocity u and thickness h
-	double Iv(double u, double h)
+	double Iv(double u, double h, double ppval)
 	{
-		return (3*pp.etaf)/(pp.phi*(pp.rhog-pp.rhof)*this->gcostheta)*(u/(h*h));
+		return (3*pp.etaf)*(u/h)/ppval;
 	}
 
 	const double  zeroHeightThreshold, huThreshold;
-	double buoyancyFactor, rhoBulk;
+	double P, rhoBulk, chi;
 	
-	double thetaDeg, theta, g, tau0, gcostheta, gsintheta, tantheta;
+	double thetaDeg, theta, g, tau0, gcostheta, gsintheta, tantheta, d, alpha;
 	MuIvParams pp;
 	bool stoppedMaterialHandling;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 /// 1-D SW equations with MuIv friction
-class SWMuIvEqn1D : public SWMuIvEqnBase<1>
+class SWMuIvEqn1DFullTest : public SWMuIvEqnBase<3>
 {
 public:
 	// Inherit constructors from base class
-	using SWMuIvEqnBase<1>::SWMuIvEqnBase;
+	using SWMuIvEqnBase<3>::SWMuIvEqnBase;
 
 	enum Variables
 	{
 		H = 0,
-		HU = 1
+		HU = 1,
+		HPHI = 2,
+		PBH = 3
 	};
 
 
@@ -179,6 +200,8 @@ public:
 		{
 		case H: return "H";
 		case HU: return "HU";
+		case HPHI: return "HPHI";
+		case PBH: return "PBH";
 		default: return Equation::VariableName(d);
 		}
 	}
@@ -187,10 +210,16 @@ public:
 	{
 		xFlux[H] = u[HU];
 
-		if (u[H] < this->zeroHeightThreshold)
+		if (u[H] < this->zeroHeightThreshold) {
 			xFlux[HU] = 0;
-		else
+			xFlux[HPHI] = 0;
+			xFlux[PBH] = 0;
+		}	
+		else {
 			xFlux[HU] = u[HU] * u[HU] / u[H] + 0.5 * this->gcostheta * u[H] * u[H];
+			xFlux[HPHI] = u[HPHI]*u[HU]/u[H];
+			xFlux[PBH] = u[PBH]*u[HU]/u[H];
+		}
 	}
 
 	double XWaveSpeeds(const double *u, const double *extras, const double *dextrasdt)
@@ -206,17 +235,23 @@ public:
 
 	void SourceTerms(double dt, double *stvect, double *u, const double *extras, const double *dedt)
 	{
-		double h = u[H], hu = u[HU];
+		double h = u[H], hu = u[HU], hphi = u[HPHI], pbterm = u[PBH];
 
 		if (h < this->zeroHeightThreshold)
 		{
 			h = this->zeroHeightThreshold;
 			hu = 0;
+			hphi = h*pp.phim;
 		}
 
 		double uval = hu/h;
 		double absu = std::abs(uval);
 		double signU;
+
+		double phi = hphi/h;
+
+		double pb = pbterm/h+rhoBulk*this->gcostheta*chi*h;
+		double ppval = rhoBulk*this->gcostheta*h-pb;
 
 		// If u is exactly equal to zero, assume (wrongly...) that the friction is upslope
 		if (absu == 0)
@@ -224,14 +259,29 @@ public:
 		else 
 			signU = uval/absu;
 
+		double beta = 150*pp.phim*pp.phim*pp.etaf/((1-pp.phim)*(1-pp.phim)*(1-pp.phim)*d*d);
+
+		double D = -2/beta/h*(pb-pp.rhof*this->gcostheta*h);
+		double zeta = 3/(2*alpha*h) + this->gcostheta*pp.rhof*P/4;
 
 		// Calculate friction law
-		double iv = this->Iv(absu, h);
+		double iv = this->Iv(absu, h, ppval);
 
 		// mu * (rho-rho_f)/rho
-		double mubf = (1/buoyancyFactor)*this->MuIv(iv);
+		double mubf = ppval*this->MuIv(iv);
 
-		double absFriction = -mubf * h * this->gcostheta - tau0/rhoBulk;
+		double absFriction = (1/rhoBulk)*(-mubf - tau0); // + (rhoBulk-pp.rhof)*D*uval
+
+		double tanpsi = phi - pp.phim/(1+sqrt(iv));
+
+		double dilatancy = 3/alpha/h*absu*tanpsi;
+
+		double psi1 = D*P;
+		double psi5 = zeta*D - dilatancy;
+		stvect[H] = psi1;
+		stvect[HPHI] = -D*phi*pp.rhof/rhoBulk;
+
+		stvect[PBH] = (psi5-rhoBulk*this->gcostheta*chi*psi1)*h+(pb-rhoBulk*this->gcostheta*chi*h)*psi1;
 
 		if (this->stoppedMaterialHandling && dt != -1)
 		{
@@ -278,5 +328,51 @@ public:
 
 	}
 };
+
+// template <typename TRANSITION>
+class SWMuIvEqn1DViscous : public SWMuIvEqn1DFullTest
+{
+public:
+	using SWMuIvEqn1DFullTest::SWMuIvEqn1DFullTest;
+	// using SWMuIvEqn1D<TRANSITION>::pp;
+	// using SWMuIvEqn1D<TRANSITION>::gsintheta;
+	// using SWMuIvEqn1D<TRANSITION>::gcostheta;
+	// using SWMuIvEqn1D<TRANSITION>::tantheta;
+
+	// Redefine this here, which is terrible, but otherwise two-phase lookup prevents
+	// access of variable names from this class without explicit this->
+	enum Variables
+	{
+		H = 0,
+		HU = 1
+	};
+
+	// Turn on diffusion terms
+	constexpr const bool HasDiffusionTerms() const
+	{
+		return true;
+	}
+
+	void XDiffusionFlux(double *xFlux, const double *u, const double *dudx, const double *dudy)
+	{
+		xFlux[H] = 0;
+		if (u[H] < this->zeroHeightThreshold)
+		{
+		xFlux[HU] = 0;
+		}
+		else
+		{
+		xFlux[HU] = this->Nu() * pow(u[H],0.5)*(dudx[HU]-u[HU]*dudx[H]/u[H]);
+		}
+	}
+
+	constexpr const double Nu()
+	{
+		return 1e-4;
+	}
+
+};
+
+
 
 #endif

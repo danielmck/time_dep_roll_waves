@@ -277,6 +277,50 @@ public:
 		}
 
 	}
+
+};
+
+class SWMuIvEqn1DViscous : public SWMuIvEqn1D 
+{
+public:
+	using SWMuIvEqn1D::SWMuIvEqn1D;
+	// using SWMuIvEqn1D<TRANSITION>::pp;
+	// using SWMuIvEqn1D<TRANSITION>::gsintheta;
+	// using SWMuIvEqn1D<TRANSITION>::gcostheta;
+	// using SWMuIvEqn1D<TRANSITION>::tantheta;
+
+	// Redefine this here, which is terrible, but otherwise two-phase lookup prevents
+	// access of variable names from this class without explicit this->
+	enum Variables
+	{
+		H = 0,
+		HU = 1
+	};
+
+	// Turn on diffusion terms
+	constexpr const bool HasDiffusionTerms() const
+	{
+		return true;
+	}
+
+	void XDiffusionFlux(double *xFlux, const double *u, const double *dudx, const double *dudy)
+	{
+		xFlux[H] = 0;
+		if (u[H] < this->zeroHeightThreshold)
+		{
+		xFlux[HU] = 0;
+		}
+		else
+		{
+		xFlux[HU] = this->Nu() * pow(u[H],1)*(dudx[HU]-u[HU]*dudx[H]/u[H]);
+		}
+	}
+
+	constexpr const double Nu()
+	{
+		return 1e-4;
+	}
+
 };
 
 #endif
