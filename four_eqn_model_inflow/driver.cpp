@@ -1,5 +1,5 @@
 #include "SDKTSolver.h"
-#include "SWFourEqnTest.h"
+#include "SWFourEqn.h"
 #include "RK2TimeStepper.h"
 
 #include <cmath>
@@ -10,17 +10,25 @@
 #include <sstream>
 #include <functional>
 
+double gh0, gu0, gphi0, gpbterm0;
 
-class ChannelRollWave
+void InflowFunction(double *u, double *extras, double x, double y, double t)
 {
-	typedef SWMuIvEqn1DFullTest Eqn;
-	// typedef SWMuIvEqn1DViscous VisEqn;
+	u[SWMuIvEqn1DFull::H] = gh0*(1+0.001*sin(1*t));
+	u[SWMuIvEqn1DFull::HU] = gh0*gu0;
+	u[SWMuIvEqn1DFull::HPHI]=gh0*gphi0;
+	u[SWMuIvEqn1DFull::PBH]=gpbterm0;
+}
+
+class ChannelRollWaveInflow
+{
+	typedef SWMuIvEqn1DFull Eqn;
 	typedef LimiterWENO LIMITER;
 	typedef RK2TimeStepper TIMESTEPPER;
 	typedef SDKTSolver<Eqn, LIMITER> Solver;
 
 public:
-	ChannelRollWave(double h0_, double domainLength_) 
+	ChannelRollWaveInflow(double h0_, double domainLength_) 
 	{
 		h0 = h0_;
 		domainLength = domainLength_;
@@ -39,17 +47,33 @@ public:
 		Solver solver(n, eqn, new TIMESTEPPER());
 		solver.SetDomain(0.0, domainLength); // Domain is x in [0, domainLength]
 
-		solver.SetPeriodicBoundaryConditions();
+
+		solver.SetBoundaryConditionType(HyperbolicSolver::East,
+										{Eqn::H, Eqn::HU, Eqn::HPHI, Eqn::PBH},
+										HyperbolicSolver::GradientExtrapolate0,
+										HyperbolicSolver::FluxUseExtrapolated);
+		
+		solver.SetBoundaryConditionType(HyperbolicSolver::West,
+										{Eqn::H, Eqn::HU, Eqn::HPHI, Eqn::PBH},
+										HyperbolicSolver::GradientExtrapolate0,
+										HyperbolicSolver::FluxSetValue);
+
+		gh0 = h0;
+		gu0 = u0;
+
+		solver.SetBoundaryConditionFunctions(HyperbolicSolver::West, InflowFunction);
+											 
 		
 		using namespace std::placeholders;
 		solver.SetInitialConditions([this,u0,phi0,pbterm0](double *u, double x, double y)
 									{
-										u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
+										u[Eqn::H]=h0;
 										u[Eqn::HU]=h0*u0;
 										u[Eqn::HPHI]=h0*phi0;
 										u[Eqn::PBH]=pbterm0;
 									});
-		solver.Run(500.0,100); // Integrate to t=100.0, outputting 100 times
+
+		solver.Run(300.0,100); // Integrate to t=1.0, outputting 100 times
 	}
 private:
 	double u0, h0, domainLength;
@@ -59,11 +83,14 @@ int main(int argc, char *argv[])
 {
 	feenableexcept( FE_INVALID | FE_DIVBYZERO); 
 
-	int npts = 1000;
+	int npts = 6000;
 	{
-		ChannelRollWave crw(0.1,2);
+		ChannelRollWaveInflow crw(0.1,800);
 		crw.Run(npts);
 	}
 
+
+
 	return 0;
 }
+

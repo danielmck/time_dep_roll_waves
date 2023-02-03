@@ -35,6 +35,7 @@ flux_ratio = final_flux/base_flux;
 remake_ode = false;
 ode_file = [dirname, '/ode_orig.txt'];
 flux_file = [dirname, '/ode_match_flux.txt'];
+pres_h_file = [dirname, '/ode_pres_h.txt'];
 if isfile(ode_file) && ~remake_ode
     in_comp = load(ode_file);
     xi_comp = in_comp(1,:);
@@ -52,6 +53,15 @@ else
     [xi_flux,y_flux] = time_dep_recreate(h0,theta,lambda,tau0,flux_ratio);
     out_flux = vertcat(xi_flux,y_flux);
     save(flux_file,"out_flux","-ascii")
+end
+if isfile(pres_h_file) && ~remake_ode
+    in_pres_h = load(pres_h_file);
+    xi_pres_h = in_pres_h(1,:);
+    y_pres_h = in_pres_h(2:end,:);
+else
+    [xi_pres_h,y_pres_h] = time_dep_recreate(h0,theta,lambda,tau0,1,1);
+    out_pres_h = vertcat(xi_pres_h,y_pres_h);
+    save(pres_h_file,"out_pres_h","-ascii")
 end
 
 h_comp = y_comp(3,:);

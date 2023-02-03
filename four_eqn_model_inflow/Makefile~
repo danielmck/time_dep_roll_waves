@@ -1,6 +1,7 @@
 SOURCES=driver.cpp
-EXECUTABLE=four_eqn_model
+EXECUTABLE=shock_erosion
 CFLAGS=-I../../
 
 include ../../global.mk
+
 

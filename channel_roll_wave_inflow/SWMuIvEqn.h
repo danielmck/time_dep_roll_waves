@@ -44,6 +44,18 @@ class SWMuIvEqnBase : public Equation
 {
 public:
 	/// Constructor, provide g, theta in degrees, and struct with MuIv friction law params
+	SWMuIvEqnBase(double g_, double thetaDeg_, int nExtras_ = 0) 
+		:SWMuIvEqnBase(g_, thetaDeg_, 0, nExtras_)
+	{
+
+	}
+
+	SWMuIvEqnBase(double g_, double thetaDeg_, MuIvParams pp_, int nExtras_ = 0) 
+		: SWMuIvEqnBase(g_, thetaDeg_, 0, nExtras_)
+	{
+		SetMuIvParams(pp_);
+	}
+
 	SWMuIvEqnBase(double g_, double thetaDeg_, double tau0_, MuIvParams pp_, int nExtras_ = 0) 
 		: SWMuIvEqnBase(g_, thetaDeg_, tau0_, nExtras_)
 	{
@@ -55,9 +67,8 @@ public:
 		Equation(DIM+1, N_UNSOLVED, nExtras_),  zeroHeightThreshold(1e-7), huThreshold(1e-14)
 	{
 		SetGTheta(g_, thetaDeg_, tau0_);
-		P = 0;
+		buoyancyFactor = 0;
 		rhoBulk = 0;
-		chi = 0;
 		stoppedMaterialHandling = false;
 		this->RegisterParameter("smh", Parameter(&stoppedMaterialHandling));
 	}
@@ -74,10 +85,7 @@ public:
 		this->RegisterParameter("rhof", Parameter(&pp.rhof));
 
 		rhoBulk = (pp.phi*pp.rhog+(1-pp.phi)*pp.rhof);
-		P = (rhoBulk-pp.rhof)/rhoBulk;
-
-		this->RegisterParameter("rho", Parameter(&rhoBulk));
-		this->RegisterParameter("P", Parameter(&P));
+		buoyancyFactor = rhoBulk/(rhoBulk-pp.rhof);
 	}
 
 	const MuIvParams &GetMuIvParams() const

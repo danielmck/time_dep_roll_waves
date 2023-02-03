@@ -209,6 +209,8 @@ public:
 	void XConvectionFlux(double *xFlux, const double *u, const double *extras, const double *dextrasdt)
 	{
 		xFlux[H] = u[HU];
+		// xFlux[HPHI] = u[HU];
+		// xFlux[PBH] = u[HU];
 
 		if (u[H] < this->zeroHeightThreshold) {
 			xFlux[HU] = 0;
@@ -251,7 +253,10 @@ public:
 		double phi = hphi/h;
 
 		double pb = pbterm/h+rhoBulk*this->gcostheta*chi*h;
-		double ppval = rhoBulk*this->gcostheta*h-pb;
+		// double ppval = rhoBulk*this->gcostheta*h-pb;
+		double ppval = (rhoBulk-pp.rhof)*this->gcostheta*h;
+
+		// std::cout << pb << " " << ppval << std::endl;
 
 		// If u is exactly equal to zero, assume (wrongly...) that the friction is upslope
 		if (absu == 0)
@@ -268,9 +273,10 @@ public:
 		double iv = this->Iv(absu, h, ppval);
 
 		// mu * (rho-rho_f)/rho
+
 		double mubf = ppval*this->MuIv(iv);
 
-		double absFriction = (1/rhoBulk)*(-mubf - tau0); // + (rhoBulk-pp.rhof)*D*uval
+		double absFriction = (1/rhoBulk)*(-mubf - tau0); // + (rhoBulk-pp.rhof)*D*uval);
 
 		double tanpsi = phi - pp.phim/(1+sqrt(iv));
 
@@ -278,10 +284,10 @@ public:
 
 		double psi1 = D*P;
 		double psi5 = zeta*D - dilatancy;
-		stvect[H] = psi1;
-		stvect[HPHI] = -D*phi*pp.rhof/rhoBulk;
+		stvect[H] += psi1;
+		stvect[HPHI] += -D*phi*pp.rhof/rhoBulk;
 
-		stvect[PBH] = (psi5-rhoBulk*this->gcostheta*chi*psi1)*h+(pb-rhoBulk*this->gcostheta*chi*h)*psi1;
+		stvect[PBH] += (psi5-rhoBulk*this->gcostheta*chi*psi1)*h+(pb-rhoBulk*this->gcostheta*chi*h)*psi1;
 
 		if (this->stoppedMaterialHandling && dt != -1)
 		{

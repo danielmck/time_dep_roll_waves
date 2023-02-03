@@ -1,5 +1,5 @@
 SOURCES=driver.cpp
-EXECUTABLE=four_test_model
+EXECUTABLE=four_eqn_model_inflow
 CFLAGS=-I../../
 
 include ../../global.mk

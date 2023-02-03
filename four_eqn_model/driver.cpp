@@ -1,5 +1,5 @@
 #include "SDKTSolver.h"
-#include "SWFourEqn.h"
+#include "SWFourEqnTest.h"
 #include "RK2TimeStepper.h"
 
 #include <cmath>
@@ -13,7 +13,8 @@
 
 class ChannelRollWave
 {
-	typedef SWMuIvEqn1DFull Eqn;
+	typedef SWMuIvEqn1DFullTest Eqn;
+	// typedef SWMuIvEqn1DViscous VisEqn;
 	typedef LimiterWENO LIMITER;
 	typedef RK2TimeStepper TIMESTEPPER;
 	typedef SDKTSolver<Eqn, LIMITER> Solver;
@@ -27,7 +28,7 @@ public:
 
 	void Run(int n)
 	{
-		Eqn eqn(9.81, 10, 35, 1e-4, 1e-5);
+		Eqn eqn(9.81, 10, 40, 1e-4, 1e-5);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
 		eqn.EnableInDirectoryName("theta");
@@ -43,12 +44,12 @@ public:
 		using namespace std::placeholders;
 		solver.SetInitialConditions([this,u0,phi0,pbterm0](double *u, double x, double y)
 									{
-										u[Eqn::H]=h0*(1+1e-3*sin(2.0*M_PI*x/domainLength));
+										u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
 										u[Eqn::HU]=h0*u0;
 										u[Eqn::HPHI]=h0*phi0;
 										u[Eqn::PBH]=pbterm0;
 									});
-		solver.Run(500.0,100); // Integrate to t=100.0, outputting 100 times
+		solver.Run(200.0,100); // Integrate to t=100.0, outputting 100 times
 	}
 private:
 	double u0, h0, domainLength;

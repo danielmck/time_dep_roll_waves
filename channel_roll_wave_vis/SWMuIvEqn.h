@@ -318,7 +318,7 @@ public:
 
 	constexpr const double Nu()
 	{
-		return 1e-4;
+		return 1e-3;
 	}
 
 };

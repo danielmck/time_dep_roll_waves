@@ -1,6 +1,7 @@
 SOURCES=driver.cpp
-EXECUTABLE=four_eqn_model
+EXECUTABLE=channel_roll_wave_inflow
 CFLAGS=-I../../
 
 include ../../global.mk
+
 
