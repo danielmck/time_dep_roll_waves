@@ -1,4 +1,4 @@
-dirname = 'results/tau_40_theta_10_1500';
+dirname = 'channel_roll_wave/results/tau0_40_theta_10_1000';
 dat=hs.Load(dirname);
 
 final = dat(101);
@@ -31,6 +31,25 @@ u0 = Fr_eq*sqrt(g*cosd(theta)*h0);
 base_flux = h0*u0;
 flux_ratio = final_flux/base_flux;
 % hs.Plot(dat,1,100);
+
+%%
+dat_len = size(struct2table(dat),1);
+
+max_pos = zeros(dat_len,1);
+wave_speed = zeros(dat_len-1,1);
+for i = 1:dat_len
+    curr = dat(i);
+    curr_y = permute(curr.data,[3,1,2]);
+    curr_h = curr_y(1,:);
+    [max_h,ind] = max(curr_h);
+    max_pos(i) = final.xGrid(ind);
+    if i > 1
+        del_t = dat(i).time-dat(i-1).time;
+        wave_speed(i-1) = mod(max_pos(i) - max_pos(i-1),lambda)/del_t;
+    end
+end
+plot(wave_speed)
+%%
 
 remake_ode = false;
 ode_file = [dirname, '/ode_orig.txt'];
@@ -89,4 +108,4 @@ xlabel("$\xi$ (m)")
 ylim([0,1.8])
 legend("Location","northwest")
 title("$\theta = "+num2str(theta)+"^{\circ}$, $\tau_0 = "+num2str(tau0)+"$Pa")
-exp_graph(gcf,"wave_depo_flux_comp_"+num2str(theta)+"deg_tau_"+num2str(tau0)+"_u.pdf")
+% exp_graph(gcf,"wave_depo_flux_comp_"+num2str(theta)+"deg_tau_"+num2str(tau0)+"_u.pdf")

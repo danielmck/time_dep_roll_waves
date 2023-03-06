@@ -57,7 +57,6 @@ public:
 		SetGTheta(g_, thetaDeg_, tau0_);
 		P = 0;
 		rhoBulk = 0;
-		chi = 0;
 		stoppedMaterialHandling = false;
 		this->RegisterParameter("smh", Parameter(&stoppedMaterialHandling));
 	}
@@ -91,7 +90,7 @@ public:
 		double max=1e8, min=0;
 		while (max-min > 1e-14)
 		{
-			((MuIv(Iv(0.5*(max+min),h))-buoyancyFactor*tantheta+tau0/((rhoBulk-pp.rhof)*gcostheta*h)>0)?max:min)=0.5*(max+min);
+			((MuIv(Iv(0.5*(max+min),h))-tantheta/P+tau0/((rhoBulk-pp.rhof)*gcostheta*h)>0)?max:min)=0.5*(max+min);
 		}
 		return 0.5*(max+min);
 	}
@@ -155,7 +154,7 @@ protected:
 	}
 
 	const double  zeroHeightThreshold, huThreshold;
-	double buoyancyFactor, rhoBulk;
+	double P, rhoBulk;
 	
 	double thetaDeg, theta, g, tau0, gcostheta, gsintheta, tantheta;
 	MuIvParams pp;
@@ -233,7 +232,7 @@ public:
 		double iv = this->Iv(absu, h);
 
 		// mu * (rho-rho_f)/rho
-		double mubf = (1/buoyancyFactor)*this->MuIv(iv);
+		double mubf = P*this->MuIv(iv);
 
 		double absFriction = -mubf * h * this->gcostheta - tau0/rhoBulk;
 

@@ -14,7 +14,7 @@ double gh0, gu0, gphi0, gpbterm0;
 
 void InflowFunction(double *u, double *extras, double x, double y, double t)
 {
-	u[SWMuIvEqn1DFull::H] = gh0*(1+0.001*sin(1*t));
+	u[SWMuIvEqn1DFull::H] = gh0*(1+0.001*sin(t));
 	u[SWMuIvEqn1DFull::HU] = gh0*gu0;
 	u[SWMuIvEqn1DFull::HPHI]=gh0*gphi0;
 	u[SWMuIvEqn1DFull::PBH]=gpbterm0;
@@ -41,8 +41,9 @@ public:
 		eqn.EnableStoppedMaterialHandling();
 		eqn.EnableInDirectoryName("theta");
 		eqn.EnableInDirectoryName("tau0");
-		double u0, phi0, pbterm0;
+		double u0, phi0, pbterm0, uin, phiin, pbtermin;
 		eqn.SteadyUniformU(h0,u0,phi0,pbterm0);
+		// eqn.SteadyUniformUTheta(10,h0,uin,phiin,pbtermin);
 		std::cout << "u0=" << u0 << ", Fr0=" << eqn.SteadyUniformFr(h0,u0) << " , phi0=" << phi0 << std::endl;
 		Solver solver(n, eqn, new TIMESTEPPER());
 		solver.SetDomain(0.0, domainLength); // Domain is x in [0, domainLength]
@@ -60,7 +61,8 @@ public:
 
 		gh0 = h0;
 		gu0 = u0;
-
+		gphi0 = phi0;
+		gpbterm0 = pbterm0;
 		solver.SetBoundaryConditionFunctions(HyperbolicSolver::West, InflowFunction);
 											 
 		
@@ -88,8 +90,6 @@ int main(int argc, char *argv[])
 		ChannelRollWaveInflow crw(0.1,800);
 		crw.Run(npts);
 	}
-
-
 
 	return 0;
 }

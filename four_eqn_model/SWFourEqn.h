@@ -215,11 +215,10 @@ public:
 
 	void SteadyUniformUTheta(double alt_theta, double h, double &u, double &phi, double &pbterm)
 	{
-		const double pi = 3.14159265358979323846264338327950288;
-		double max=1e8, min=0, Iv, alt_gct = this->g*cos(alt_theta*pi/180.0);
+		double max=1e8, min=0, Iv, alt_gct = this->g*cos(this->alt_theta*pi/180.0);
 		while (max-min > 1e-14)
 		{
-			((this->MuIv(0.5*(max+min))-tan(alt_theta*pi/180.0)/this->P+this->tau0/((this->rhoBulk-this->pp.rhof)*alt_gct*h)>0)?max:min)=0.5*(max+min);
+			((this->MuIv(0.5*(max+min))-tan(alt_theta*this->pi/180.0)/this->P+this->tau0/((this->rhoBulk-this->pp.rhof)*alt_gct*h)>0)?max:min)=0.5*(max+min);
 		}
 		Iv = 0.5*(max+min);
 		u = UFromIv(Iv,h,(this->rhoBulk-this->pp.rhof)*alt_gct*h);
@@ -354,11 +353,7 @@ public:
 
 		// Calculate friction law
 		double iv = this->Iv(absu, h, ppval);
-		if (iv<0)
-		{
-			iv = 1e-7; // in case ppval becomes negative
-		}
-		
+
 		// mu * (rho-rho_f)/rho
 
 		double mubf = ppval*this->MuIv(iv);
