@@ -44,12 +44,12 @@ public:
 		using namespace std::placeholders;
 		solver.SetInitialConditions([this,u0,phi0,pbterm0](double *u, double x, double y)
 									{
-										u[Eqn::H]=h0*(1+2e-2*sin(2.0*M_PI*x/domainLength));
+										u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
 										u[Eqn::HU]=h0*u0;
 										u[Eqn::HPHI]=h0*phi0;
 										u[Eqn::PBH]=pbterm0;
 									});
-		solver.Run(100.0,100); // Integrate to t=100.0, outputting 100 times
+		solver.Run(200.0,100); // Integrate to t=100.0, outputting 100 times
 	}
 private:
 	double u0, h0, domainLength;
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 {
 	feenableexcept( FE_INVALID | FE_DIVBYZERO); 
 
-	int npts = 4001;
+	int npts = 2500;
 	{
 		ChannelRollWave crw(0.0076,12*0.0076);
 		crw.Run(npts);

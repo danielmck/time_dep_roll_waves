@@ -1,4 +1,5 @@
 #include "SDKTSolver.h"
+#include "SDKTSolverSWPP.h"
 #include "SWFourEqn.h"
 #include "RK2TimeStepper.h"
 
@@ -14,18 +15,18 @@ double gh0, gu0, gphi0, gpbterm0;
 
 void InflowFunction(double *u, double *extras, double x, double y, double t)
 {
-	u[SWMuIvEqn1DFull::H] = gh0*(1+0.001*sin(t));
-	u[SWMuIvEqn1DFull::HU] = gh0*gu0;
-	u[SWMuIvEqn1DFull::HPHI]=gh0*gphi0;
-	u[SWMuIvEqn1DFull::PBH]=gpbterm0;
+	u[SWMuIvEqn1DRhoVary::H] = gh0*(1+0.001*sin(t/5));
+	u[SWMuIvEqn1DRhoVary::HU] = gh0*gu0;
+	u[SWMuIvEqn1DRhoVary::HPHI]=gh0*gphi0;
+	u[SWMuIvEqn1DRhoVary::PBH]=gpbterm0;
 }
 
 class ChannelRollWaveInflow
 {
-	typedef SWMuIvEqn1DFull Eqn;
+	typedef SWMuIvEqn1DRhoVary Eqn;
 	typedef LimiterWENO LIMITER;
 	typedef RK2TimeStepper TIMESTEPPER;
-	typedef SDKTSolver<Eqn, LIMITER> Solver;
+	typedef SDKTSolverSWPP<Eqn, LIMITER> Solver;
 
 public:
 	ChannelRollWaveInflow(double h0_, double domainLength_) 
@@ -36,7 +37,7 @@ public:
 
 	void Run(int n)
 	{
-		Eqn eqn(9.81, 10, 35, 1e-4, 1e-5);
+		Eqn eqn(9.81, 10, 40, 1e-4, 1e-5);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
 		eqn.EnableInDirectoryName("theta");

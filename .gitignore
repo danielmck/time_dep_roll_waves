@@ -35,3 +35,8 @@ Footer
 
 **/results/**
 **/*.pdf
+
+# Matlab
+.asv
+
+.gitignore

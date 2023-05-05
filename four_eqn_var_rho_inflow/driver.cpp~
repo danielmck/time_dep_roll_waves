@@ -1,6 +1,5 @@
 #include "SDKTSolver.h"
-#include "SDKTSolverSWPP.h"
-#include "SWFourEqn.h"
+#include "SWFourEqnTest.h"
 #include "RK2TimeStepper.h"
 
 #include <cmath>
@@ -14,11 +13,11 @@
 
 class ChannelRollWave
 {
-	typedef SWMuIvEqn1DRhoVary Eqn;
+	typedef SWMuIvEqn1DFullTest Eqn;
 	// typedef SWMuIvEqn1DViscous VisEqn;
 	typedef LimiterWENO LIMITER;
 	typedef RK2TimeStepper TIMESTEPPER;
-	typedef SDKTSolverSWPP<Eqn, LIMITER> Solver;
+	typedef SDKTSolver<Eqn, LIMITER> Solver;
 
 public:
 	ChannelRollWave(double h0_, double domainLength_) 
@@ -29,12 +28,10 @@ public:
 
 	void Run(int n)
 	{
-		Eqn eqn(9.81, 12, 0, 1e-4, 1e-5);
+		Eqn eqn(9.81, 10, 40, 1e-4, 1e-5);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
 		eqn.EnableInDirectoryName("theta");
-		// eqn.EnableInDirectoryName("initTheta");
-		// eqn.EnableInDirectoryName("finalTheta");
 		eqn.EnableInDirectoryName("tau0");
 		double u0, phi0, pbterm0;
 		eqn.SteadyUniformU(h0,u0,phi0,pbterm0);
@@ -45,22 +42,14 @@ public:
 		solver.SetPeriodicBoundaryConditions();
 		
 		using namespace std::placeholders;
-		// solver.LoadInitialConditions("time_d_load_h.txt",0);
-		// solver.LoadInitialConditions("time_d_load_hu.txt",1);
-		// solver.LoadInitialConditions("time_d_load_hphi.txt",2);
-		// solver.LoadInitialConditions("time_d_load_pbh.txt",3);
 		solver.SetInitialConditions([this,u0,phi0,pbterm0](double *u, double x, double y)
 									{
-										u[Eqn::H]=h0*(1+1e-2*(sin(2.0*M_PI*x/domainLength))); //+sin(6.0*M_PI*x/domainLength)+sin(10.0*M_PI*x/domainLength)));
+										u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
 										u[Eqn::HU]=h0*u0;
 										u[Eqn::HPHI]=h0*phi0;
 										u[Eqn::PBH]=pbterm0;
 									});
-		// solver.Run(1.0,10); // Integrate to t=100.0, outputting 100 times
-		// Eqn *eqnpntr = dynamic_cast<Eqn *>(solver.EquationPtr());
-		// eqnpntr->SwitchTheta();
-		// eqn.SwitchTheta();
-		solver.Run(200.0,100);
+		solver.Run(200.0,100); // Integrate to t=100.0, outputting 100 times
 	}
 private:
 	double u0, h0, domainLength;
@@ -70,9 +59,9 @@ int main(int argc, char *argv[])
 {
 	feenableexcept( FE_INVALID | FE_DIVBYZERO); 
 
-	int npts = 6000;
+	int npts = 1000;
 	{
-		ChannelRollWave crw(0.0073,0.0073*12);
+		ChannelRollWave crw(0.1,10);
 		crw.Run(npts);
 	}
 

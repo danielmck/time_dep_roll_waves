@@ -1,17 +1,26 @@
 % dirname = 'channel_roll_wave/results/tau0_0_theta_12_2000';
-dirname = 'four_eqn_model/results/tau0_0_theta_12_4001';
+dirname = 'four_eqn_var_rho/results/tau0_0_theta_12_2500'; %';finalTheta_7_initTheta_9_tau0_0_2000
 dat=hs.Load(dirname);
-% hs.Plot(dat,1,[0.0,0.02])
+% hs.Plot(dat,1,[0.0,0.5])
 
 final = dat(end);
 theta = final.params.theta;
-h0 = 0.1;
 lambda = final.xSize;
 % rho = final.params.rho;
 % chi = final.params.chi;
-% g = final.params.g;
+g = final.params.g;
+rho_p = final.params.rhog;
+rho_f = final.params.rhof;
+% eta_f = final.params.etaf;
+phi_c = final.params.phim;
+d = final.params.d;
+alpha = final.params.alpha;
 
-
+if isfield(final.params,"etaf")
+    eta_f=final.params.etaf;
+else
+    eta_f=1.0013e-3;
+end
 
 if isfield(final.params,"tau0")
     tau0=final.params.tau0;
@@ -54,7 +63,65 @@ if size(final_y,1) > 2
     final_pe = final_pb - final.params.rhof.*g.*cosd(theta).*final_h;
 end
 
+P = (rho-rho_f)./rho;
+ppval = rho.*g.*cosd(theta).*final_h-final_pb;
+
+% if (absu == 0)
+%     signU = 1;
+% else 
+%     signU = uval/absu;
+% end
+
+beta = 150*phi_c^2*eta_f/((1-phi_c)^3*d^2);
+
+zeta = 3./(2.*alpha.*final_h) + rho_f*g*cosd(theta).*P/4;
+
+iv = (3*eta_f).*(abs(final_u)./final_h)./ppval;
+
+iv_use = max(iv,1e-7);
+ppval_use = max(1e-7,ppval);
+pb_use = rho.*g.*cosd(theta).*final_h-ppval_use;
+
+mubf = ppval_use.*mu_Iv_fn(iv_use);
+
+D = -2/beta./final_h.*(pb_use-rho_f*g*cosd(theta)*final_h);
+
+absFriction = (1./rho).*(-mubf - tau0 + (rho-rho_f).*D.*final_u);
+force_bal = final_h*g*sind(theta)+absFriction;
+
+tanpsi = final_phi - phi_c./(1+sqrt(iv_use));
+
+
+dilatancy = 3./alpha./final_h.*final_u.*tanpsi;
+
+psi1 = D.*P;
+psi5 = zeta.*D - dilatancy;
+source_h = psi1;
+source_hphi = -D.*final_phi.*rho_f./rho;
+
+source_pbh = (psi5-g*cosd(theta)*rho_f/4.*psi1).*final_h+(pb_use-rho*g*cosd(theta).*chi.*final_h).*psi1;
+
 ode_denom = final_h.^3*g*cosd(theta)-final_hu.^2;
+
+max_pos = zeros(size(dat,2),1);
+lambda = dat(1).xGrid(end);
+for i=1:size(dat,2)
+    curr = dat(i);
+    curr_y = permute(curr.data,[3,1,2]);
+    curr_xi = curr.xGrid;
+    [h_max, h_loc] = max(curr_y(1,:));
+    max_pos(i) = curr_xi(h_loc);
+end
+u_w_time = (mod(diff(max_pos),lambda)+8*lambda)/2;
+u_w = u_w_time(end);
+
+[h_min, min_ind] = min(final_h);
+hu_min = final_hu(min_ind);
+Q1_min = u_w*h_min-hu_min;
+pb_min = final_pb(min_ind);
+h_max = (-h_min + sqrt(h_min.^2+8*Q1_min^2./(h_min*g*cosd(theta))))/2;
+pb_max = pb_min+rho(end).*g.*cosd(theta).*chi(end).*(h_max-h_min);
+
 %%
 % [phi_c,rho_f,rho_p,rho,eta_f,g] = get_params_water();
 % P = (rho-rho_f)/rho;
@@ -80,15 +147,17 @@ ode_denom = final_h.^3*g*cosd(theta)-final_hu.^2;
 %%
 
 hold on
+% figure(2)
 % SetPaperSize(8,8)
-plot(final_grid,final_h,"DisplayName","Variable $\rho$ model")
+plot(final_grid,final_phi,"DisplayName","Wave Profile")
+% plot(final_grid(end),pb_max,"x","DisplayName","Shock condition maximum")
 % plot(final_grid,final.params.rhof.*g.*cosd(theta).*final_h)
-ylabel("$h$ ($m$)")
+% ylabel("$h$ ($m$)")
 % ylabel("$u$ ($ms^{-1}$)")
 % ylabel("$\phi$")
-% ylabel("$p_b$ ($Pa$)")
+ylabel("$p_b$ ($Pa$)")
 xlabel("$\xi$ (m)")
-% % ylim([0,1.8])
-legend("Location","south")
+% ylim([30,205])
+legend("Location","best")
 title("$\theta = "+num2str(theta)+"^{\circ}$, $\tau_0 = "+num2str(tau0)+"$Pa, $t="+num2str(final.time)+"$s")
-% exp_graph(gcf,"rho_vary_comp_"+num2str(theta)+"deg_tau0_"+num2str(tau0)+"_h.pdf")
+% exp_graph(gcf,"rho_con_"+num2str(theta)+"deg_tau0_"+num2str(tau0)+"_shock_pb.pdf")
