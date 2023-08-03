@@ -14,7 +14,7 @@
 
 class ChannelRollWave
 {
-	typedef SWMuIvEqn1DRhoVary Eqn;
+	typedef SWMuIvEqn1DRauterVis Eqn;
 	// typedef SWMuIvEqn1DViscous VisEqn;
 	typedef LimiterMinMod2 LIMITER; 
 	typedef RK2TimeStepper TIMESTEPPER;
@@ -29,17 +29,17 @@ public:
 
 	void Run(int n)
 	{
-		Eqn eqn(9.81, 9.2, 0, 1e-4, 1e-5,8.6);
+		Eqn eqn(9.81, 10, 0, 1e-4, 130,0.53,0.63);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
 		std::string limiterName = LIMITER::Name();
 		// eqn.RegisterParameter("limiter", Parameter(&limiterName, true));
-		// eqn.EnableInDirectoryName("theta");
-		eqn.EnableInDirectoryName("initTheta");
-		eqn.EnableInDirectoryName("finalTheta");
+		eqn.EnableInDirectoryName("theta");
+		// eqn.EnableInDirectoryName("initTheta");
+		// eqn.EnableInDirectoryName("finalTheta");
 		eqn.EnableInDirectoryName("tau0");
-		double u0, phi0, pbterm0;
-		eqn.SteadyUniformU(h0,u0,phi0,pbterm0);
+		double u0, phi0;
+		eqn.SteadyUniformU(h0,u0,phi0);
 		std::cout << "u0=" << u0 << ", Fr0=" << eqn.SteadyUniformFr(h0,u0) << " , phi0=" << phi0 << std::endl;
 		Solver solver(n, eqn, new TIMESTEPPER());
 		solver.SetDomain(0.0, domainLength); // Domain is x in [0, domainLength]
@@ -51,19 +51,17 @@ public:
 		// solver.LoadInitialConditions("time_d_load_hu.txt",1);
 		// solver.LoadInitialConditions("time_d_load_hphi.txt",2);
 		// solver.LoadInitialConditions("time_d_load_pbh.txt",3);
-		solver.SetInitialConditions([this,u0,phi0,pbterm0](double *u, double x, double y)
+		solver.SetInitialConditions([this,u0,phi0](double *u, double x, double y)
 									{
-										u[Eqn::H]=h0*(1+1e-2*(sin(2.0*M_PI*x/domainLength))); //+sin(6.0*M_PI*x/domainLength)+sin(10.0*M_PI*x/domainLength)));
+										u[Eqn::H]=h0*(1+0e-3*(sin(2.0*M_PI*x/domainLength))); //+sin(6.0*M_PI*x/domainLength)+sin(10.0*M_PI*x/domainLength)));
 										u[Eqn::HU]=h0*u0;
 										u[Eqn::HPHI]=h0*phi0;
-										u[Eqn::PBH]=pbterm0;
 									});
-		solver.Run(10.0,10); // Integrate to t=100.0, outputting 100 times
-		Eqn *eqnpntr = dynamic_cast<Eqn *>(solver.EquationPtr());
-		eqnpntr->SwitchTheta();
-		eqn.SwitchTheta();
-		solver.Run(100.0,100);
-		
+		// solver.Run(10.0,10); // Integrate to t=100.0, outputting 100 times
+		// Eqn *eqnpntr = dynamic_cast<Eqn *>(solver.EquationPtr());
+		// eqnpntr->SwitchTheta();
+		// eqn.SwitchTheta();
+		solver.Run(10.0,100);
 	}
 private:
 	double u0, h0, domainLength;
@@ -73,9 +71,9 @@ int main(int argc, char *argv[])
 {
 	feenableexcept( FE_INVALID | FE_DIVBYZERO); 
 
-	int npts = 2100;
+	int npts = 3000;
 	{
-		ChannelRollWave crw(0.0388,0.0388*20);
+		ChannelRollWave crw(0.0242,0.0242*10);
 		crw.Run(npts);
 	}
 

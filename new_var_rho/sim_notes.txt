@@ -1,0 +1,17 @@
+results_ssh/finalTheta_7_initTheta_10_tau0_0_3100.txt, Initial run to check if sustained, result: no
+results_ssh/finalTheta_7.1_initTheta_10_tau0_0_3100.txt, Initial run to check if sustained, result: no
+results_ssh/finalTheta_7.2_initTheta_10_tau0_0_3100.txt, Initial run to check if sustained, result: no
+results_ssh/finalTheta_7.3_initTheta_10_tau0_0_3100.txt, Initial run to check if sustained, result: no
+results_ssh/finalTheta_7.4_initTheta_10_tau0_0_3100.txt, Initial run to check if sustained, result: no
+results_ssh/finalTheta_7.5_initTheta_10_tau0_0_3100.txt, Initial run to check if sustained, result: no
+results_ssh/finalTheta_8_initTheta_10_tau0_0_3200.txt, Initial run to check if sustained, result: no
+results_ssh/finalTheta_8.1_initTheta_10_tau0_0_3100.txt, Initial run to check if sustained, result: no
+results_ssh/finalTheta_8.2_initTheta_10_tau0_0_3100.txt, Initial run to check if sustained, result: yes
+results_ssh/finalTheta_8.3_initTheta_10_tau0_0_3100.txt, Initial run to check if sustained, result: yes
+results_ssh/tau0_0_theta_12_6000, high resolution run to compare with ode model
+results_ssh/tau0_0_theta_12_5000, initial condition provided by ode to check for convergence
+results_ssh/tau0_20_theta_9_5000, simulation showing slow dilatant timescale
+
+results/tau0_0_theta_12_2400, quick test to comapre with ode
+results/tau0_0_theta_12_2500, quick test to comapre with ode
+results/finalTheta_8.3_initTheta_10_tau0_0_3500.txt, quick run to check if sustained, result: yes

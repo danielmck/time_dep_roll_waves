@@ -27,10 +27,12 @@ public:
 
 	void Run(int n)
 	{
-		Eqn eqn(9.81, 12, 0);
+		Eqn eqn(9.81, 25, 0, 8.2);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
-		eqn.EnableInDirectoryName("theta");
+		// eqn.EnableInDirectoryName("theta");
+		eqn.EnableInDirectoryName("initTheta");
+		eqn.EnableInDirectoryName("finalTheta");
 		eqn.EnableInDirectoryName("tau0");
 		double u0 = eqn.SteadyUniformU(h0);
 		std::cout << "u0=" << u0 << ", Fr0=" << eqn.SteadyUniformFr(h0) << std::endl;
@@ -45,7 +47,10 @@ public:
 										u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
 										u[Eqn::HU]=h0*u0;
 									});
-		solver.Run(100.0,100); // Integrate to t=100.0, outputting 100 times
+		solver.Run(10.0,10); // Integrate to t=100.0, outputting 100 times
+		Eqn *eqnpntr = dynamic_cast<Eqn *>(solver.EquationPtr());
+		eqnpntr->SwitchTheta();
+		solver.Run(200.0,100); // Integrate to t=100.0, outputting 100 times
 	}
 private:
 	double u0, h0, domainLength;
@@ -57,7 +62,7 @@ int main(int argc, char *argv[])
 
 	int npts = 2000;
 	{
-		ChannelRollWave crw(0.0076,0.0076*20);
+		ChannelRollWave crw(0.05,0.05*26);
 		crw.Run(npts);
 	}
 
