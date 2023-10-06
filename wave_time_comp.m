@@ -1,9 +1,9 @@
 % dirname = 'channel_roll_wave/results/finalTheta_8.2_initTheta_25_tau0_0_2000';
-dirname = 'four_eqn_var_rho/results/finalTheta_8.6_initTheta_9.2_tau0_0_2100'; %';finalTheta_8.2_initTheta_10_tau0_0_3500
+dirname = 'four_eqn_var_rho/results/tau0_0_theta_12_5000'; %';finalTheta_8.2_initTheta_10_tau0_0_3500
 dat=hs.Load(dirname);
 % hs.Plot(dat,1,[0.0,0.2])
 
-time_pts = [11,36,61,86,111];
+time_pts = [1,26,51,76,101];
 C = viridis(size(time_pts,2));
 hold on
 for i = 1:size(time_pts,2)
@@ -127,53 +127,56 @@ for i = 1:size(time_pts,2)
 %         plot(final_grid,final_pb,'--',"DisplayName","t=0s",'color','r')
 %     else
 %         names = ["Initial wave","t=100s"]; %"t="+num2str(final.time)+"s"
-    if (i == 1)
-        plot(final_grid,final_u,"DisplayName","Initial wave","color",C(i,:)) %
-    else
-        plot(final_grid,final_u,"DisplayName","t="+num2str(final.time-10)+"s","color",C(i,:))
-    end
+%     if (i == 1)
+%         plot(final_grid,final_u,"DisplayName","Initial wave","color",C(i,:)) %
+%     else
+        plot(final_grid,final_h.*rho,"DisplayName","t="+num2str(final.time)+"s","color",C(i,:))
+%     end
 end
 
+[t_vals, D_ave] = average_waves(dat);
+% plot(t_vals,D_ave)
+
 %%
-pres_h_file = '/ode_pres_h.txt';
-in_pres_h = load([dirname, pres_h_file]);
-xi_pres_h = in_pres_h(1,:);
-y_pres_h = in_pres_h(2:end,:);
-param_file = load([dirname, '/ode_params.txt']); %
-
-Fr_pres_h = param_file(1);
-theta_pres_h = param_file(2);
-d_pres_h = param_file(4);
-alpha_pres_h = param_file(3);
-tau0_pres_h = param_file(5);
-[h0_pres_h,Iv_pres_h] = crit_Iv_tau0(theta_pres_h, rho_p, rho_f, eta_f, Fr_pres_h, tau0_pres_h,false,true);
-u0_pres_h = Fr_pres_h*sqrt(g*cosd(theta_pres_h)*h0_pres_h);
-
-u_w_pres_h = param_file(6)*u0_pres_h;
-lambda_pres_h = param_file(7);
-crit_xi = param_file(8);
-xi_pres_h = horzcat(xi_pres_h(xi_pres_h<1)*crit_xi,crit_xi+(xi_pres_h(xi_pres_h>=1)-1)*(lambda/h0_pres_h-crit_xi));
-xi_pres_h = xi_pres_h*h0_pres_h;
-
-h_pres_h = y_pres_h(2,:)*h0_pres_h;
-% u_w_pres_h = y_pres_h(1,1);
-Q1_pres_h = y_pres_h(1,:)*h0_pres_h*u0_pres_h;
-u_pres_h = (u_w_pres_h - Q1_pres_h./h_pres_h);
-phi_pres_h = h0_pres_h*u0_pres_h*y_pres_h(4,:)./Q1_pres_h;
-rho_pres_h = rho_p*phi_pres_h+rho_f*(1-phi_pres_h);
-chi_pres_h = (3*rho_pres_h+rho_f)./rho_pres_h/4;
-pb_pres_h = rho_f*g*cosd(theta)*h0_pres_h*y_pres_h(5,:) + rho_pres_h.*g*cosd(theta).*chi_pres_h.*h_pres_h;
-pp_pres_h = rho_pres_h.*g.*cosd(theta).*h_pres_h-pb_pres_h;
-
-plot(xi_pres_h, h_pres_h, "DisplayName", "ODE Solution" ,'color','r')
+% pres_h_file = '/ode_pres_h.txt';
+% in_pres_h = load([dirname, pres_h_file]);
+% xi_pres_h = in_pres_h(1,:);
+% y_pres_h = in_pres_h(2:end,:);
+% param_file = load([dirname, '/ode_params.txt']); %
+% 
+% Fr_pres_h = param_file(1);
+% theta_pres_h = param_file(2);
+% d_pres_h = param_file(4);
+% alpha_pres_h = param_file(3);
+% tau0_pres_h = param_file(5);
+% [h0_pres_h,Iv_pres_h] = crit_Iv_tau0(theta_pres_h, rho_p, rho_f, eta_f, Fr_pres_h, tau0_pres_h,false,true);
+% u0_pres_h = Fr_pres_h*sqrt(g*cosd(theta_pres_h)*h0_pres_h);
+% 
+% u_w_pres_h = param_file(6)*u0_pres_h;
+% lambda_pres_h = param_file(7);
+% crit_xi = param_file(8);
+% xi_pres_h = horzcat(xi_pres_h(xi_pres_h<1)*crit_xi,crit_xi+(xi_pres_h(xi_pres_h>=1)-1)*(lambda/h0_pres_h-crit_xi));
+% xi_pres_h = xi_pres_h*h0_pres_h;
+% 
+% h_pres_h = y_pres_h(2,:)*h0_pres_h;
+% % u_w_pres_h = y_pres_h(1,1);
+% Q1_pres_h = y_pres_h(1,:)*h0_pres_h*u0_pres_h;
+% u_pres_h = (u_w_pres_h - Q1_pres_h./h_pres_h);
+% phi_pres_h = h0_pres_h*u0_pres_h*y_pres_h(4,:)./Q1_pres_h;
+% rho_pres_h = rho_p*phi_pres_h+rho_f*(1-phi_pres_h);
+% chi_pres_h = (3*rho_pres_h+rho_f)./rho_pres_h/4;
+% pb_pres_h = rho_f*g*cosd(theta)*h0_pres_h*y_pres_h(5,:) + rho_pres_h.*g*cosd(theta).*chi_pres_h.*h_pres_h;
+% pp_pres_h = rho_pres_h.*g.*cosd(theta).*h_pres_h-pb_pres_h;
+% 
+% plot(xi_pres_h, h_pres_h, "DisplayName", "ODE Solution" ,'color','r')
 %%
-SetPaperSize(8,8)
-% ylabel("$h$ ($m$)")
-ylabel("$u$ ($ms^{-1}$)")
+% SetPaperSize(7.6,7.6)
+ylabel("$h$ ($m$)")
+% ylabel("$u$ ($ms^{-1}$)")
 % ylabel("$\phi$")
 % ylabel("$p_b$ ($Pa$)")
 xlabel("$x$ (m)")
 % ylim([0,250])
 legend("Location","best")
-title("$\theta = "+num2str(theta)+"^{\circ}$, $\tau_0 = "+num2str(tau0)+"$Pa, $h_0 = 0.0388$m") %,, $t="+num2str(final.time)+"$s
-exp_graph(gcf,"shallow_slope_slow.pdf")
+% title("$\theta = "+num2str(theta)+"^{\circ}$, $Fr = 1.0$, $\tau_0 = "+num2str(tau0)+"$Pa") %,, $t="+num2str(final.time)+"$s
+% exp_graph(gcf,"acc_10_deg_h.pdf")

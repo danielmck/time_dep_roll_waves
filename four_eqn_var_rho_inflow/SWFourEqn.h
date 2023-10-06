@@ -36,7 +36,7 @@ struct MuIvParams
 // Boyer et al mu parameters, with grain densities corresponding to rock and water, roughly, and water viscosity
 MuIvParams BoyerRockWater = MuIvParams(0.32, 0.7, 0.005, 0.585, 0.585, 2500, 1000, 1.0016e-3);
 
-template <unsigned DIM, unsigned N_UNSOLVED=0>
+template <unsigned DIM, unsigned N_UNSOLVED>
 class SWMuIvEqnBase : public Equation
 {
 public:
@@ -52,6 +52,14 @@ public:
 		Equation(DIM+1, N_UNSOLVED, nExtras_),  zeroHeightThreshold(1e-7), huThreshold(1e-14)
 	{
 		SetGTheta(g_, thetaDeg_, tau0_,finalTheta_);
+		stoppedMaterialHandling = false;
+		this->RegisterParameter("smh", Parameter(&stoppedMaterialHandling));
+	}
+
+	SWMuIvEqnBase(double g_, double thetaDeg_, double tau0_, double finalTheta_=-1, double change_t_=-1, int nExtras_ = 0) :
+		Equation(DIM+1, N_UNSOLVED, nExtras_),  zeroHeightThreshold(1e-7), huThreshold(1e-14)
+	{
+		SetGTheta(g_, thetaDeg_, tau0_,finalTheta_,change_t_);
 		stoppedMaterialHandling = false;
 		this->RegisterParameter("smh", Parameter(&stoppedMaterialHandling));
 	}
@@ -94,14 +102,20 @@ public:
 		return std::abs(u)/sqrt(this->gcostheta*h);
 	}
 		  
-	void SetGTheta(double g_, double thetaDeg_, double tau0_, double finalThetaDeg_ = -1.0)
+	void SetGTheta(double g_, double thetaDeg_, double tau0_, double finalThetaDeg_ = -1.0, double change_t_ = -1.0)
 	{
 		const double pi = 3.14159265358979323846264338327950288;
 		thetaDeg = thetaDeg_;
 		tau0 = tau0_;
 		initThetaDeg = thetaDeg;
-		finalThetaDeg = finalThetaDeg_;
+		if (finalThetaDeg_>0){
+			finalThetaDeg = finalThetaDeg_;
+		}
+		else {
+			finalThetaDeg = thetaDeg;
+		}
 		theta = thetaDeg*pi/180.0;
+		change_t = change_t_;
 		
 		g = g_;
 		gcostheta = g_*cos(theta);
@@ -116,6 +130,10 @@ public:
 			this->RegisterParameter("initTheta", Parameter(&initThetaDeg));
 			this->RegisterParameter("finalTheta", Parameter(&finalThetaDeg));
 		}
+		if (change_t >= 0.0)
+		{
+			this->RegisterParameter("change_t", Parameter(&change_t));
+		}
 	}
 
 	void SwitchTheta()
@@ -128,6 +146,24 @@ public:
 		gsintheta = g*sin(theta);
 		tantheta = tan(theta);
 	}
+
+	void AlterTheta()
+	{
+		double t = solverPtr->Time();
+		if (t>change_t){
+			thetaDeg = finalThetaDeg;
+		}
+		else
+		{
+			thetaDeg = initThetaDeg + (finalThetaDeg-initThetaDeg)*t/change_t;
+		}
+		theta = thetaDeg*pi/180.0;
+		gcostheta = g*cos(theta);
+		gsintheta = g*sin(theta);
+		tantheta = tan(theta);
+	}
+
+	HyperbolicSolver *solverPtr;
 
 	void EnableStoppedMaterialHandling()
 	{
@@ -144,8 +180,6 @@ public:
 	}
 
 	double ZeroHeightThreshold() {return zeroHeightThreshold;}
-
-	
 
 protected:
 	double MuIv(double Iv)
@@ -169,22 +203,22 @@ protected:
 	const double  zeroHeightThreshold, huThreshold;
 	double P, rhoBulk;
 	
-	double thetaDeg, initThetaDeg, finalThetaDeg, theta, g, tau0, gcostheta, gsintheta, tantheta;
+	double thetaDeg, initThetaDeg, finalThetaDeg, theta, g, tau0, gcostheta, gsintheta, tantheta, change_t;
 	MuIvParams pp;
 	bool stoppedMaterialHandling;
 };
 
-template <unsigned DIM, unsigned N_UNSOLVED=0>
-class SWMuIvEqnRhoVaryBase : public SWMuIvEqnBase<DIM>
+template <unsigned DIM, unsigned N_UNSOLVED>
+class SWMuIvEqnRhoVaryBase : public SWMuIvEqnBase<DIM, N_UNSOLVED>
 {
 public:
-	using SWMuIvEqnBase<DIM>::SWMuIvEqnBase;
+	using SWMuIvEqnBase<DIM, N_UNSOLVED>::SWMuIvEqnBase;
 	/// Constusing SWMuIvEqn1DFullTest::SWMuIvEqn1DFullTest;ructor, provide g, theta in degrees, and struct with MuIv friction law params
 
-	SWMuIvEqnRhoVaryBase(double g_, double thetaDeg_, double tau0_, double d_, double alpha_, double finalThetaDeg_ = -1.0, int nExtras_ = 0) :
-		SWMuIvEqnBase<DIM>(g_, thetaDeg_, tau0_, finalThetaDeg_, nExtras_)
+	SWMuIvEqnRhoVaryBase(double g_, double thetaDeg_, double tau0_, double d_, double alpha_, double finalThetaDeg_ = -1.0, double change_t_ = -1.0, int nExtras_ = 0) :
+		SWMuIvEqnBase<DIM, N_UNSOLVED>(g_, thetaDeg_, tau0_, finalThetaDeg_, change_t_, nExtras_)
 	{
-		SetGTheta(g_, thetaDeg_, tau0_, d_, alpha_);
+		SetGTheta(g_, thetaDeg_, tau0_, d_, alpha_, finalThetaDeg_, change_t_);
 	}
 
 	SWMuIvEqnRhoVaryBase(double g_, double thetaDeg_, double tau0_, double d_, double alpha_, MuIvParams pp_, int nExtras_ = 0) 
@@ -221,17 +255,18 @@ public:
 
 	void SteadyUniformUTheta(double alt_theta, double h, double &u, double &phi, double &pbterm)
 	{
-		double max=1e2, min=0, Iv_eq, phi_eq, rho_eq, P_eq, alt_gct = this->g*cos(this->alt_theta*pi/180.0), chi_eq;
+		const double pi = 3.14159265358979323846264338327950288;
+		double max=1e2, min=0, Iv_eq, phi_eq, rho_eq, P_eq, alt_gct = this->g*cos(alt_theta*pi/180.0), chi_eq;
 		while (max-min > 1e-14)
 		{
 			phi_eq = this->pp.phim/(1+sqrt((max+min)/2.0));
 			rho_eq = phi_eq*this->pp.rhog + (1-phi_eq)*this->pp.rhof;
 			P_eq = (rho_eq-this->pp.rhof)/rho_eq;
-			((this->MuIv(0.5*(max+min))-tan(alt_theta*this->pi/180.0)/P_eq+this->tau0/((rho_eq-this->pp.rhof)*this->gcostheta*h)>0)?max:min)=0.5*(max+min);
+			((this->MuIv(0.5*(max+min))-tan(alt_theta*pi/180.0)/P_eq+this->tau0/((rho_eq-this->pp.rhof)*this->gcostheta*h)>0)?max:min)=0.5*(max+min);
 		}
 		Iv_eq = 0.5*(max+min);
 		phi = this->pp.phim/(1+sqrt(Iv_eq));
-		rho_eq = phi*this->pp.rhof + (1-phi)*this->pp.rhof;
+		rho_eq = phi*this->pp.rhog + (1-phi)*this->pp.rhof;
 		chi_eq = (this->pp.rhof+3.0*rho_eq)/4.0/rho_eq;
 		u = UFromIv(Iv_eq,h,(rho_eq-this->pp.rhof)*alt_gct*h);
 		double pb = this->pp.rhof*alt_gct*h;
@@ -243,19 +278,23 @@ public:
 		return Iv*ppval*h/(3.0*this->pp.etaf);
 	}
 
-	void SetGTheta(double g_, double thetaDeg_, double tau0_, double d_, double alpha_)
+	void SetGTheta(double g_, double thetaDeg_, double tau0_, double d_, double alpha_, double finalThetaDeg_ = -1.0, double change_t_ = -1.0)
 	{
-		const double pi = 3.14159265358979323846264338327950288;
-		this->thetaDeg = thetaDeg_;
-		this->tau0 = tau0_;
+		// const double pi = 3.14159265358979323846264338327950288;
+		// this->thetaDeg = thetaDeg_;
+		// this->tau0 = tau0_;
 		this->d = d_;
 		this->alpha = alpha_;
 
-		this->theta = this->thetaDeg*pi/180.0;
-		this->g = g_;
-		this->gcostheta = g_*cos(this->theta);
-		this->gsintheta = g_*sin(this->theta);
-		this->tantheta = tan(this->theta);
+		// this->theta = this->thetaDeg*pi/180.0;
+		// this->g = g_;
+		// this->gcostheta = g_*cos(this->theta);
+		// this->gsintheta = g_*sin(this->theta);
+		// this->tantheta = tan(this->theta);
+		// this->initThetaDeg = thetaDeg_;
+		// this->finalThetaDeg = finalThetaDeg_;
+		// this->change_t = change_t_;
+		
 
 		this->RegisterParameter("d", Parameter(&d));
 		this->RegisterParameter("alpha", Parameter(&alpha));
@@ -278,11 +317,12 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////
 /// 1-D SW equations with MuIv friction
-class SWMuIvEqn1DRhoVary : public SWMuIvEqnRhoVaryBase<3>
+template <unsigned N_UNSOLVED>
+class SWMuIvEqn1DRhoVary : public SWMuIvEqnRhoVaryBase<3, N_UNSOLVED>
 {
 public:
 	// Inherit constructors from base class
-	using SWMuIvEqnRhoVaryBase<3>::SWMuIvEqnRhoVaryBase;
+	using SWMuIvEqnRhoVaryBase<3, N_UNSOLVED>::SWMuIvEqnRhoVaryBase;
 	// using SWMuIvEqnBase<3>::SWMuIvEqnBase;
 
 	enum Variables
@@ -290,7 +330,8 @@ public:
 		H = 0,
 		HU = 1,
 		HPHI = 2,
-		PBH = 3
+		PBH = 3,
+		THETA = 4
 	};
 
 
@@ -302,12 +343,27 @@ public:
 		case HU: return "HU";
 		case HPHI: return "HPHI";
 		case PBH: return "PBH";
+		case THETA: return "THETA";
 		default: return Equation::VariableName(d);
 		}
 	}
 
+	void SpatialTheta(const double *u)
+	{
+		const double pi = 3.14159265358979323846264338327950288;
+		double spat_theta = u[THETA];
+		this->thetaDeg = spat_theta;
+		this->theta = this->thetaDeg*pi/180.0;
+		this->gcostheta = this->g*cos(this->theta);
+		this->gsintheta = this->g*sin(this->theta);
+		this->tantheta = tan(this->theta);
+	}
+
 	void XConvectionFlux(double *xFlux, const double *u, const double *extras, const double *dextrasdt)
 	{
+		if (N_UNSOLVED == 1) {
+			SpatialTheta(u);
+		}
 		xFlux[H] = u[HU];
 		// xFlux[HPHI] = u[HU];
 		// xFlux[PBH] = u[HU];
@@ -329,6 +385,9 @@ public:
 		// No wave speed for zero height, but none either for static material
 		// This stops (or reduces to machine precision) the evolution of static layers
 		// that otherwise occurs even when hu = 0
+		if (N_UNSOLVED == 1) {
+			SpatialTheta(u);
+		}
 		if (u[H] < this->zeroHeightThreshold || std::abs(u[HU]) < this->huThreshold)
 			return 0;
 		else
@@ -337,12 +396,15 @@ public:
 
 	void SourceTerms(double dt, double *stvect, double *u, const double *extras, const double *dedt)
 	{
+		if (N_UNSOLVED == 1) {
+			SpatialTheta(u);
+		}
 		double h = u[H], hu = u[HU], hphi = u[HPHI], pbterm = u[PBH];
 		if (h < this->zeroHeightThreshold)
 		{
 			h = this->zeroHeightThreshold;
 			hu = 0;
-			hphi = h*pp.phim;
+			hphi = h*this->pp.phim;
 		}
 
 		double uval = hu/h;
@@ -351,7 +413,7 @@ public:
 
 		double phi = hphi/h;
 
-		double rhoBulk = pp.rhog*phi + pp.rhof*(1-phi);
+		double rhoBulk = this->pp.rhog*phi + this->pp.rhof*(1-phi);
 		double chi = (this->pp.rhof+3*rhoBulk)/4/rhoBulk;
 		double P = (rhoBulk-this->pp.rhof)/rhoBulk;
 
@@ -364,15 +426,15 @@ public:
 		else 
 			signU = uval/absu;
 
-		double beta = 150.0*pp.phim*pp.phim*pp.etaf/((1.0-pp.phim)*(1.0-pp.phim)*(1.0-pp.phim)*d*d);
+		double beta = 150.0*this->pp.phim*this->pp.phim*this->pp.etaf/((1.0-this->pp.phim)*(1.0-this->pp.phim)*(1.0-this->pp.phim)*this->d*this->d);
 
-		double D = -2.0/beta/h*(pb-pp.rhof*this->gcostheta*h);
-		double zeta = 3.0/(2.0*alpha*h) + this->gcostheta*pp.rhof*P/4.0;
+		double D = -2.0/beta/h*(pb-this->pp.rhof*this->gcostheta*h);
+		double zeta = 3.0/(2.0*this->alpha*h) + this->gcostheta*this->pp.rhof*P/4.0;
 
 
 		// Calculate friction law
 		double iv = this->Iv(absu, h, ppval);
-		double tanpsi = phi - pp.phim/(1+sqrt(iv));
+		double tanpsi = phi - this->pp.phim/(1+sqrt(iv));
 
 		// if (iv<0) // in case ppval becomes negative
 		// {
@@ -394,20 +456,20 @@ public:
 		// mu * (rho-rho_f)/rho
 		double mubf = ppval*this->MuIv(iv);
 		if (ppval < 1e-8)
-			mubf = 3.0*absu*pp.etaf/h;
+			mubf = 3.0*absu*this->pp.etaf/h; // transition to viscous fluid
 		
 
-		double absFriction = (1.0/rhoBulk)*(-mubf - tau0 + (rhoBulk-pp.rhof)*D*absu);
+		double absFriction = (1.0/rhoBulk)*(-mubf - this->tau0 + (rhoBulk-this->pp.rhof)*D*absu);
 
-		double dilatancy = 1.0/alpha/h*absu*tanpsi*9.0/2.0;
+		double dilatancy = 1.0/this->alpha/h*absu*tanpsi*9.0/2.0;
 
 		double psi1 = D*P;
 		double psi5 = zeta*D - dilatancy;
 		stvect[H] += psi1;
 
-		stvect[HPHI] += -D*phi*pp.rhof/rhoBulk;
+		stvect[HPHI] += -D*phi*this->pp.rhof/rhoBulk;
 
-		stvect[PBH] += (psi5-this->gcostheta*pp.rhof*P/4.0*D)*h+(pb-rhoBulk*this->gcostheta*chi*h)*psi1;
+		stvect[PBH] += (psi5-this->gcostheta*this->pp.rhof*P/4.0*D)*h+(pb-rhoBulk*this->gcostheta*chi*h)*psi1;
 
 		if (this->stoppedMaterialHandling && dt != -1)
 		{
@@ -427,11 +489,11 @@ public:
 				// apply at most enough friction to keep static, either upslope or downslope
 				if (stvect[HU]>0)
 				{
-					stvect[HU] += std::max(absFriction, -stvect[HU]);
+					stvect[HU] += std::max(absFriction*signU, -stvect[HU]); // add *signU?
 	 			}
 				else if (stvect[HU]<0)
 				{
-					stvect[HU] += std::min(-absFriction, -stvect[HU]);
+					stvect[HU] += std::min(absFriction*signU, -stvect[HU]); // add *signU?
 				}
 				else
 				{
@@ -455,7 +517,10 @@ public:
 		// 	double test = 1;
 		// }
 	}
-};
 
-
+	void ExtrasFunction(double *dedt, const VectorArray2d *u, double t)
+	{
+		this->AlterTheta();
+	}
+};	
 #endif

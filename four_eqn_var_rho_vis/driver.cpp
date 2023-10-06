@@ -15,7 +15,7 @@
 class ChannelRollWave
 {
 	// typedef SWMuIvEqn1DRhoVary Eqn;
-	typedef SWMuIvEqnFullViscousRhoVary VisEqn;
+	typedef SWMuIvEqnFullViscousRhoVary<0> VisEqn;
 	typedef LimiterWENO LIMITER;
 	typedef RK2TimeStepper TIMESTEPPER;
 	typedef SDKTSolver<VisEqn, LIMITER> Solver;
@@ -29,7 +29,7 @@ public:
 
 	void Run(int n)
 	{
-		VisEqn eqn(9.81, 10, 35, 2e-4, 1e-5);
+		VisEqn eqn(9.81, 10, 0, 1e-4, 1e-5);
 		eqn.SetMuIvParams(BoyerRockWater);
 		// eqn.EnableStoppedMaterialHandling();
 		eqn.EnableInDirectoryName("theta");
@@ -60,9 +60,9 @@ int main(int argc, char *argv[])
 {
 	feenableexcept( FE_INVALID | FE_DIVBYZERO); 
 
-	int npts = 5000;
+	int npts = 2000;
 	{
-		ChannelRollWave crw(0.1,3);
+		ChannelRollWave crw(0.0188,25*0.0188);
 		crw.Run(npts);
 	}
 

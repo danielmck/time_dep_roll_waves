@@ -37,7 +37,7 @@ public:
 
 	void Run(int n)
 	{
-		Eqn eqn(9.81, 10, 35, 1e-4, 1e-5);
+		Eqn eqn(9.81, 10, 0, 1e-4, 1e-5);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
 		eqn.EnableInDirectoryName("theta");
