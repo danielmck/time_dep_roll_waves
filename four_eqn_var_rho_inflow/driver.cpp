@@ -12,7 +12,7 @@
 #include <functional>
 
 double gh0, gu0, gphi0, gpbterm0;
-unsigned int const  n_uns = 0;
+unsigned int const  n_uns = 1;
 
 void InflowFunction(double *u, double *extras, double x, double y, double t)
 {
@@ -38,16 +38,19 @@ public:
 
 	void Run(int n)
 	{
-		Eqn eqn(9.81, 10.0, 10.0, 1e-4, 1e-5);
+		Eqn eqn(9.81, 7.0, 0.0, 1e-4, 1e-5);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
 		eqn.EnableInDirectoryName("theta");
 		eqn.EnableInDirectoryName("tau0");
-		double u0, phi0, pbterm0, uin, phiin, pbtermin;
-		eqn.SteadyUniformUTheta(10.0,h0,u0,phi0,pbterm0);
-		// eqn.SteadyUniformUTheta(10,h0,uin,phiin,pbtermin);
-		std::cout << "u0=" << u0 << ", Fr0=" << eqn.SteadyUniformFr(h0,u0) << " , phi0=" << phi0 << std::endl;
+		double u0, phi0, pbterm0, h0frac = 0.5, uin, phiin, pbtermin;
+		// eqn.SteadyUniformUTheta(10.0,h0,u0,phi0,pbterm0);
+		eqn.SteadyUniformUTheta(5.0,h0frac*h0,uin,phiin,pbtermin);
+		// std::cout << "u0=" << u0 << ", Fr0=" << eqn.SteadyUniformFr(h0,u0) << " , phi0=" << phi0 << std::endl;
+		std::cout << "uin=" << uin << ", Frin=" << eqn.SteadyUniformFr(h0frac*h0,uin) << " , phiin=" << phiin << std::endl;
 		Solver solver(n, eqn, new TIMESTEPPER());
+		Eqn *eqnpntr = dynamic_cast<Eqn *>(solver.EquationPtr());
+		eqnpntr->solverPtr = &solver;
 		solver.SetDomain(0.0, domainLength); // Domain is x in [0, domainLength]
 
 
@@ -73,19 +76,22 @@ public:
 		// solver.LoadInitialConditions("time_d_load_hu.txt",1);
 		// solver.LoadInitialConditions("time_d_load_hphi.txt",2);
 		// solver.LoadInitialConditions("time_d_load_pbh.txt",3);
-		solver.SetInitialConditions([this,u0,phi0,pbterm0](double *u, double x, double y)
+		solver.SetInitialConditions([this,h0frac,uin,phiin,pbtermin](double *u, double x, double y)
 									{
-										u[Eqn::H]=h0;
-										u[Eqn::HU]=h0*u0;
-										u[Eqn::HPHI]=h0*phi0;
-										u[Eqn::PBH]=pbterm0;
+										u[Eqn::H]=h0*h0frac;
+										u[Eqn::HU]=h0*h0frac*uin;
+										u[Eqn::HPHI]=h0*h0frac*phiin;
+										u[Eqn::PBH]=pbtermin;
 										// u[Eqn::THETA]=10;
-										double ch_len = 00.0;
-										if (x<ch_len) {
-											u[Eqn::THETA] = 10.0-(10.0-8.0)*x/(ch_len);
+										double con_len = 30.0, ch_len = 30.0;
+										if (x<con_len) {
+											u[Eqn::THETA] = 10.0;
+										}
+										if (x<con_len+ch_len) {
+											u[Eqn::THETA] = 10.0-(10.0-7.0)*(x-con_len)/(ch_len);
 										}
 										else {
-											u[Eqn::THETA] = 10;
+											u[Eqn::THETA] = 7.0;
 										}
 									});
 		// solver.LoadInitialConditions("theta_profile.txt",4);
@@ -101,7 +107,7 @@ int main(int argc, char *argv[])
 
 	int npts = 10000;
 	{
-		ChannelRollWaveInflow crw(0.0443,100);
+		ChannelRollWaveInflow crw(0.0246,100);
 		crw.Run(npts);
 	}
 

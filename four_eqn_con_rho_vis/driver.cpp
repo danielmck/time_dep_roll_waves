@@ -28,7 +28,7 @@ public:
 
 	void Run(int n)
 	{
-		VisEqn eqn(9.81, 12, 0, 1e-3, 1e-5);
+		VisEqn eqn(9.81, 12, 0, 1e-, 1e-5);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
 		eqn.EnableInDirectoryName("theta");
@@ -49,7 +49,7 @@ public:
 										u[VisEqn::HPHI]=h0*phi0;
 										u[VisEqn::PBH]=pbterm0;
 									});
-		solver.Run(25.0,100); // Integrate to t=100.0, outputting 100 times
+		solver.Run(200.0,100); // Integrate to t=100.0, outputting 100 times
 	}
 private:
 	double u0, h0, domainLength;
@@ -59,9 +59,9 @@ int main(int argc, char *argv[])
 {
 	feenableexcept( FE_INVALID | FE_DIVBYZERO); 
 
-	int npts = 3000;
+	int npts = 4100;
 	{
-		ChannelRollWave crw(0.0076,12*0.0076);
+		ChannelRollWave crw(0.0061,1.7644);
 		crw.Run(npts);
 	}
 

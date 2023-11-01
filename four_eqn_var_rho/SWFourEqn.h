@@ -45,6 +45,7 @@ public:
 		: SWMuIvEqnBase(g_, thetaDeg_, tau0_, nExtras_)
 	{
 		SetMuIvParams(pp_);
+		solverPtr = nullptr;
 	}
 
 	/// Provide g, theta in degrees.
@@ -54,6 +55,7 @@ public:
 		SetGTheta(g_, thetaDeg_, tau0_,finalTheta_);
 		stoppedMaterialHandling = false;
 		this->RegisterParameter("smh", Parameter(&stoppedMaterialHandling));
+		solverPtr = nullptr;
 	}
 
 	SWMuIvEqnBase(double g_, double thetaDeg_, double tau0_, double finalTheta_=-1, double change_t_=-1, int nExtras_ = 0) :
@@ -62,6 +64,7 @@ public:
 		SetGTheta(g_, thetaDeg_, tau0_,finalTheta_,change_t_);
 		stoppedMaterialHandling = false;
 		this->RegisterParameter("smh", Parameter(&stoppedMaterialHandling));
+		solverPtr = nullptr;
 	}
 
 	void SetMuIvParams(MuIvParams pp_)
@@ -125,7 +128,7 @@ public:
 		this->RegisterParameter("theta", Parameter(&thetaDeg));
 		this->RegisterParameter("g", Parameter(&g));
 		this->RegisterParameter("tau0", Parameter(&tau0));
-		if (finalThetaDeg >= 0.0)
+		if (finalThetaDeg_ >= 0.0)
 		{
 			this->RegisterParameter("initTheta", Parameter(&initThetaDeg));
 			this->RegisterParameter("finalTheta", Parameter(&finalThetaDeg));
@@ -266,7 +269,7 @@ public:
 		}
 		Iv_eq = 0.5*(max+min);
 		phi = this->pp.phim/(1+sqrt(Iv_eq));
-		rho_eq = phi*this->pp.rhof + (1-phi)*this->pp.rhof;
+		rho_eq = phi*this->pp.rhog + (1-phi)*this->pp.rhof;
 		chi_eq = (this->pp.rhof+3.0*rho_eq)/4.0/rho_eq;
 		u = UFromIv(Iv_eq,h,(rho_eq-this->pp.rhof)*alt_gct*h);
 		double pb = this->pp.rhof*alt_gct*h;

@@ -229,7 +229,7 @@ public:
 		}
 		Iv_eq = 0.5*(max+min);
 		phi = this->pp.phim/(1+sqrt(Iv_eq));
-		rho_eq = phi*this->pp.rhof + (1-phi)*this->pp.rhof;
+		rho_eq = phi*this->pp.rhog + (1-phi)*this->pp.rhof;
 		u = UFromIv(Iv_eq,h,(rho_eq-this->pp.rhof)*alt_gct*h);
 	}
 		  

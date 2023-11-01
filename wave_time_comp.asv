@@ -1,9 +1,9 @@
 % dirname = 'channel_roll_wave/results/finalTheta_8.2_initTheta_25_tau0_0_2000';
-dirname = 'four_eqn_var_rho/results/tau0_0_theta_12_2500'; %';finalTheta_8.2_initTheta_10_tau0_0_3500
+dirname = 'four_eqn_var_rho/results/lambda_0_tau0_0_theta_12_4000';
 dat=hs.Load(dirname);
 % hs.Plot(dat,1,[0.0,0.2])
 
-time_pts = [1,26,51,76,101];
+time_pts = [90,101];
 C = viridis(size(time_pts,2));
 hold on
 for i = 1:size(time_pts,2)
@@ -46,11 +46,12 @@ for i = 1:size(time_pts,2)
     final_y = permute(final.data,[3,1,2]);
     final_h = final_y(1,:);
 
-
+if ~all(dirname(18:23)=='inflow')
     [~,ind] = min(final_h);
     final_h = horzcat(final_h(ind:end),final_h(1:ind-1));
     final_grid = mod((horzcat(final_grid(ind:end),final_grid(1:ind-1))-final_grid(ind)),lambda);
     final_y = horzcat(final_y(:,ind:end),final_y(:,1:ind-1));
+end
 
     final_hu = final_y(2,:);
     final_u = final_hu./final_h;
@@ -176,7 +177,7 @@ ylabel("$h$ ($m$)")
 % ylabel("$\phi$")
 % ylabel("$p_b$ ($Pa$)")
 xlabel("$x$ (m)")
-% ylim([0,250])
+% xlim([0,1])
 legend("Location","best")
 % title("$\theta = "+num2str(theta)+"^{\circ}$, $Fr = 1.0$, $\tau_0 = "+num2str(tau0)+"$Pa") %,, $t="+num2str(final.time)+"$s
 % exp_graph(gcf,"acc_10_deg_h.pdf")

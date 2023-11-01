@@ -13,7 +13,7 @@
 
 class ChannelRollWave
 {
-	typedef SWMuIvEqn1D Eqn;
+	typedef SWMuIvEqn1D<0> Eqn;
 	typedef LimiterWENO LIMITER;
 	typedef RK2TimeStepper TIMESTEPPER;
 	typedef SDKTSolverSWPP<Eqn, LIMITER> Solver;
@@ -27,30 +27,39 @@ public:
 
 	void Run(int n)
 	{
-		Eqn eqn(9.81, 12, 0);
+		Eqn eqn(9.81, 12.0, 0.0,5.0,20.0);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
-		eqn.EnableInDirectoryName("theta");
-		// eqn.EnableInDirectoryName("initTheta");
-		// eqn.EnableInDirectoryName("finalTheta");
+		// eqn.EnableInDirectoryName("theta");
+		eqn.EnableInDirectoryName("initTheta");
+		eqn.EnableInDirectoryName("finalTheta");
+		eqn.EnableInDirectoryName("change_t");
+
 		eqn.EnableInDirectoryName("tau0");
+		double lambda_in =  domainLength/h0;
+		eqn.RegisterParameter("lambda", Parameter(&lambda_in, true));
 		double u0 = eqn.SteadyUniformU(h0);
 		std::cout << "u0=" << u0 << ", Fr0=" << eqn.SteadyUniformFr(h0) << std::endl;
 		Solver solver(n, eqn, new TIMESTEPPER());
 		solver.SetDomain(0.0, domainLength); // Domain is x in [0, domainLength]
 
+		Eqn *eqnpntr = dynamic_cast<Eqn *>(solver.EquationPtr());
+		eqnpntr->solverPtr = &solver;
 		solver.SetPeriodicBoundaryConditions();
 
 		using namespace std::placeholders;
-		solver.SetInitialConditions([this,u0](double *u, double x, double y)
-									{
-										u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
-										u[Eqn::HU]=h0*u0;
-									});
+		solver.LoadInitialConditions("time_d_load_h.txt",0);
+		solver.LoadInitialConditions("time_d_load_hu.txt",1);
+		// solver.SetInitialConditions([this,u0](double *u, double x, double y)
+		// 							{
+		// 								u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
+		// 								u[Eqn::HU]=h0*u0;
+		// 							});
+
 		// solver.Run(10.0,10); // Integrate to t=100.0, outputting 100 times
 		// Eqn *eqnpntr = dynamic_cast<Eqn *>(solver.EquationPtr());
 		// eqnpntr->SwitchTheta();
-		solver.Run(100.0,100); // Integrate to t=100.0, outputting 100 times
+		solver.Run(30.0,1000); // Integrate to t=100.0, outputting 100 times
 	}
 private:
 	double u0, h0, domainLength;
@@ -59,10 +68,10 @@ private:
 int main(int argc, char *argv[])
 {
 	feenableexcept( FE_INVALID | FE_DIVBYZERO); 
-
-	int npts = 2500;
+	double lambda_ = std::stod(argv[1]);
+	int npts = 4000;
 	{
-		ChannelRollWave crw(0.0076026,0.0076026*12);
+		ChannelRollWave crw(0.0061,0.0061*lambda_);
 		crw.Run(npts);
 	}
 

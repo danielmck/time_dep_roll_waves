@@ -45,6 +45,7 @@ public:
 		: SWMuIvEqnBase(g_, thetaDeg_, tau0_, nExtras_)
 	{
 		SetMuIvParams(pp_);
+		solverPtr = nullptr;
 	}
 
 	/// Provide g, theta in degrees.
@@ -54,6 +55,7 @@ public:
 		SetGTheta(g_, thetaDeg_, tau0_,finalTheta_);
 		stoppedMaterialHandling = false;
 		this->RegisterParameter("smh", Parameter(&stoppedMaterialHandling));
+		solverPtr = nullptr;
 	}
 
 	SWMuIvEqnBase(double g_, double thetaDeg_, double tau0_, double finalTheta_=-1, double change_t_=-1, int nExtras_ = 0) :
@@ -62,6 +64,7 @@ public:
 		SetGTheta(g_, thetaDeg_, tau0_,finalTheta_,change_t_);
 		stoppedMaterialHandling = false;
 		this->RegisterParameter("smh", Parameter(&stoppedMaterialHandling));
+		solverPtr = nullptr;
 	}
 
 	void SetMuIvParams(MuIvParams pp_)
@@ -262,7 +265,7 @@ public:
 			phi_eq = this->pp.phim/(1+sqrt((max+min)/2.0));
 			rho_eq = phi_eq*this->pp.rhog + (1-phi_eq)*this->pp.rhof;
 			P_eq = (rho_eq-this->pp.rhof)/rho_eq;
-			((this->MuIv(0.5*(max+min))-tan(alt_theta*pi/180.0)/P_eq+this->tau0/((rho_eq-this->pp.rhof)*this->gcostheta*h)>0)?max:min)=0.5*(max+min);
+			((this->MuIv(0.5*(max+min))-tan(alt_theta*pi/180.0)/P_eq+this->tau0/((rho_eq-this->pp.rhof)*alt_gct*h)>0)?max:min)=0.5*(max+min);
 		}
 		Iv_eq = 0.5*(max+min);
 		phi = this->pp.phim/(1+sqrt(Iv_eq));

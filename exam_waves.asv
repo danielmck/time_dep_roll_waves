@@ -1,7 +1,7 @@
-% dirname = 'channel_roll_wave/results/tau0_0_theta_12_2000'; %change_t_10_finalTheta_7_initTheta_10_2000
-dirname = 'four_eqn_var_rho_inflow/results/tau0_0_theta_10_10000'; %';finalTheta_8_initTheta_10_tau0_0_2100 change_t_5_finalTheta_7_initTheta_10_800 tau0_0_theta_8_6000
+% dirname = 'channel_roll_wave/results/change_t_20_finalTheta_5_initTheta_12_lambda_20_tau0_0_4000'; %change_t_10_finalTheta_7_initTheta_10_2000
+dirname = 'four_eqn_var_rho_vis/results/tau0_0_theta_12_4100'; 
 dat=hs.Load(dirname);
-% hs.Plot(dat,1,[0.0,0.2])
+% hs.Plot(dat,1,[0.0,0.01])
 
 final = dat(end);
 theta = final.params.theta;
@@ -50,7 +50,7 @@ npts = size(final_grid,2);
 final_y = permute(final.data,[3,1,2]);
 final_h = final_y(1,:);
 
-if ~all(dirname(18:23)=='inflow')
+if ~all(dirname(18:23)=='inflow') && ~all(dirname(19:24)=='inflow')
 %     ind = sum(final_grid<12.6);
     [~,ind] = min(final_h);
     final_h = horzcat(final_h(ind:end),final_h(1:ind-1));
@@ -152,10 +152,12 @@ for i=1:size(dat,2)
 end
 u_w_time = (mod(diff(max_pos),lambda)+lambda)./diff(tvals);
 
-st_val = sum(final_grid<35)+1;
-sin_ave = 0;
-for j = st_val:npts
-    sin_ave = sin_ave + (rho(j)*final_h(j)+rho(j-1)*final_h(j-1))/2*(final_grid(j)-final_grid(j-1))/65;
+if final.nDims > 3
+    t_val = sum(final_grid<35)+1;
+    sin_ave = 0;
+    for j = 2:npts
+        sin_ave = sin_ave + (rho(j)*final_h(j)+rho(j-1)*final_h(j-1))/2*(final_grid(j)-final_grid(j-1))/lambda;
+    end
 end
 % u_w = u_w_time(end);
 % 
@@ -196,41 +198,41 @@ end
 % theta_change = 8.2;
 % pbh_exp = (final_pbh-rho.*g.*cosd(theta_change).*chi.*final_h).*final_h;
 % in_range = (final_grid>-1); % & final_grid>0.4);
-% n_wave = 50;
+% n_wave = 1;
 % crop_out = [];
 % for k=1:n_wave
 %     crop_out = horzcat(crop_out,final_h(in_range));
 % end
-% save("four_eqn_var_rho/time_d_load_h.txt","crop_out","-ascii")
+% save("four_eqn_var_rho_vis/time_d_load_h.txt","crop_out","-ascii")
 % crop_out = [];
 % for k=1:n_wave
 %     crop_out = horzcat(crop_out,final_hu(in_range));
 % end
 % % crop_out = final_hu(in_range);
-% save("four_eqn_var_rho/time_d_load_hu.txt","crop_out","-ascii")
+% save("four_eqn_var_rho_vis/time_d_load_hu.txt","crop_out","-ascii")
 % crop_out = [];
 % for k=1:n_wave
 %     crop_out = horzcat(crop_out,final_hphi(in_range));
 % end
 % % crop_out = final_hphi(in_range);
-% save("four_eqn_var_rho/time_d_load_hphi.txt","crop_out","-ascii")
+% save("four_eqn_var_rho_vis/time_d_load_hphi.txt","crop_out","-ascii")
 % crop_out = [];
 % for k=1:n_wave
 %     crop_out = horzcat(crop_out,final_pbh(in_range));
 % end
 % % crop_out = final_pbh(in_range);
-% save("four_eqn_var_rho/time_d_load_pbh.txt","crop_out","-ascii")
+% save("four_eqn_var_rho_vis/time_d_load_pbh.txt","crop_out","-ascii")
 %%
 
 hold on
 % figure(2)
 % SetPaperSize(15,7.6)
-plot(final_grid,final_h,"DisplayName","Wave Profile")
+plot(final_grid,final_pb,"DisplayName","Wave Profile")
 % plot(final_grid,dilatancy,"DisplayName","Wave Profile")
 % plot(final_grid,source_pbh./final_h,"DisplayName","Wave Profile")
 % plot(final_grid(end),pb_max,"x","DisplayName","Shock condition maximum")
 % plot(final_grid,final.params.rhof.*g.*cosd(theta).*final_h)
-ylabel("$h$ ($m$)")
+% ylabel("$h$ ($m$)")
 % ylabel("$u$ ($ms^{-1}$)")
 % ylabel("$\phi$")
 % ylabel("$p_b$ ($Pa$)")

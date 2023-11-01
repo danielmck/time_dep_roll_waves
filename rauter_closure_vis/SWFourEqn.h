@@ -241,7 +241,7 @@ public:
 		}
 		Iv_eq = 0.5*(max+min);
 		phi = this->pp.phim/(1+sqrt(Iv_eq));
-		rho_eq = phi*this->pp.rhof + (1-phi)*this->pp.rhof;
+		rho_eq = phi*this->pp.rhog + (1-phi)*this->pp.rhof;
 		chi_eq = (this->pp.rhof+3.0*rho_eq)/4.0/rho_eq;
 		u = UFromIv(Iv_eq,h,(rho_eq-this->pp.rhof)*alt_gct*h);
 		double pb = this->pp.rhof*alt_gct*h;
