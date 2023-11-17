@@ -1,0 +1,3 @@
+tau0_0_theta_31_9500 - Trying to replicate the Iverson simulation as close as possible. Constant alpha
+RunNum_1_tau0_0_theta_31_9500 - Changed beta to kozeny-carmen formula
+RunNum_2_tau0_0_theta_31_9500 - Kozeny-carmen beta and no fluid stress

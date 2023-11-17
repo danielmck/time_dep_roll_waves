@@ -1,9 +1,9 @@
 % dirname = 'channel_roll_wave/results/finalTheta_8.2_initTheta_25_tau0_0_2000';
-dirname = 'four_eqn_var_rho/results/lambda_70_tau0_0_theta_5_4000';
+dirname = 'four_eqn_var_rho/results/lambda_150_tau0_0_theta_5_4000';
 dat=hs.Load(dirname);
 % hs.Plot(dat,1,[0.0,0.2])
 
-time_pts = [151,152,153,157];
+time_pts = [91,111,131];
 C = viridis(size(time_pts,2));
 hold on
 for i = 1:size(time_pts,2)

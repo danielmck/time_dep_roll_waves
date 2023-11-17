@@ -32,9 +32,10 @@ struct MuIvParams
 
 	double mu1, mu2, I0, phim, phi, rhog, rhof, etaf;
 };
-
+// const double pi = 3.14159265358979323846264338327950288;
 // Boyer et al mu parameters, with grain densities corresponding to rock and water, roughly, and water viscosity
 MuIvParams BoyerRockWater = MuIvParams(0.32, 0.7, 0.005, 0.585, 0.585, 2500, 1000, 1.0016e-3);
+// MuIvParams BoyerRockWater = MuIvParams(tan(40.7*pi/180), 0.0, 0.005, 0.64, 0.64, 2700, 1100, 5.0e-3);
 
 template <unsigned DIM, unsigned N_UNSOLVED>
 class SWMuIvEqnBase : public Equation
@@ -128,7 +129,7 @@ public:
 		this->RegisterParameter("theta", Parameter(&thetaDeg));
 		this->RegisterParameter("g", Parameter(&g));
 		this->RegisterParameter("tau0", Parameter(&tau0));
-		if (finalThetaDeg_ >= 0.0)
+		if (finalThetaDeg >= 0.0)
 		{
 			this->RegisterParameter("initTheta", Parameter(&initThetaDeg));
 			this->RegisterParameter("finalTheta", Parameter(&finalThetaDeg));
@@ -197,6 +198,11 @@ protected:
 		}
 	}
 
+	double MuCoul(double tanpsi)
+	{
+			return pp.mu1+tanpsi/(1-pp.mu1*tanpsi);
+	}
+
 	// Iv of a quadratic velocity profile with depth average velocity u and thickness h
 	double Iv(double u, double h)
 	{
@@ -252,20 +258,20 @@ public:
 		rho_eq = phi*this->pp.rhog + (1-phi)*this->pp.rhof;
 		chi_eq = (this->pp.rhof+3.0*rho_eq)/4.0/rho_eq;
 		u = UFromIv(Iv_eq,h,(rho_eq-this->pp.rhof)*this->gcostheta*h);
-		double pb = this->pp.rhof*this->gcostheta*h;
+		double pb = this->pp.rhof*this->gcostheta*h*1.1;
 		pbterm = h*(pb-rho_eq*this->gcostheta*chi_eq*h);
 	}
 
 	void SteadyUniformUTheta(double alt_theta, double h, double &u, double &phi, double &pbterm)
 	{
-		double max=1e2, min=0, Iv_eq, phi_eq, rho_eq, P_eq, alt_gct = this->g*cos(alt_theta*pi/180.0), chi_eq;
 		const double pi = 3.14159265358979323846264338327950288;
+		double max=1e2, min=0, Iv_eq, phi_eq, rho_eq, P_eq, alt_gct = this->g*cos(alt_theta*pi/180.0), chi_eq;
 		while (max-min > 1e-14)
 		{
 			phi_eq = this->pp.phim/(1+sqrt((max+min)/2.0));
 			rho_eq = phi_eq*this->pp.rhog + (1-phi_eq)*this->pp.rhof;
 			P_eq = (rho_eq-this->pp.rhof)/rho_eq;
-			((this->MuIv(0.5*(max+min))-tan(alt_theta*pi/180.0)/P_eq+this->tau0/((rho_eq-this->pp.rhof)*this->gcostheta*h)>0)?max:min)=0.5*(max+min);
+			((this->MuIv(0.5*(max+min))-tan(alt_theta*pi/180.0)/P_eq+this->tau0/((rho_eq-this->pp.rhof)*alt_gct*h)>0)?max:min)=0.5*(max+min);
 		}
 		Iv_eq = 0.5*(max+min);
 		phi = this->pp.phim/(1+sqrt(Iv_eq));
@@ -311,7 +317,7 @@ protected:
 		if (ppval < 1e-8)
 			return 1e8;
 		else
-			return (3.0*this->pp.etaf)*(u/h)/(ppval); ///+this->pp.rhog*9.0*u*u*d*d
+			return (3.0*this->pp.etaf)*(u/h)/ppval;
 	}
 
 	double d, alpha;
@@ -430,8 +436,12 @@ public:
 			signU = uval/absu;
 
 		double beta = 150.0*this->pp.phim*this->pp.phim*this->pp.etaf/((1.0-this->pp.phim)*(1.0-this->pp.phim)*(1.0-this->pp.phim)*this->d*this->d);
+		// double k0 = 2.6e-11;
+		// double k = k0*std::exp((0.6-phi)/0.04);
+		// double beta = this->pp.etaf/k;
 
 		double D = -2.0/beta/h*(pb-this->pp.rhof*this->gcostheta*h);
+		// double alpha_use = 
 		double zeta = 3.0/(2.0*this->alpha*h) + this->gcostheta*this->pp.rhof*P/4.0;
 
 
@@ -439,24 +449,9 @@ public:
 		double iv = this->Iv(absu, h, ppval);
 		double tanpsi = phi - this->pp.phim/(1+sqrt(iv));
 
-		// if (iv<0) // in case ppval becomes negative
-		// {
-		// 	alter=1;
-		// 	iv = 1;
-		// 	ppval = (rhoBulk-pp.rhof)*this->gcostheta*h;
-		// 	pb = rhoBulk*this->gcostheta*h;
-		// 	tanpsi = 0.01;
-		// 	// D = D*10;
-		// }
-		// if (pb<0) // in case pb becomes negative
-		// {
-		// 	alter = 1;
-		// 	pb = pp.rhof*this->gcostheta*h/2;
-		// 	ppval = rhoBulk*this->gcostheta*h-pb;
-		// 	tanpsi = -0.01;
-		// }
-
 		// mu * (rho-rho_f)/rho
+		// double tau_f = 2*this->pp.etaf*(1-phi)/h*absu;
+		// double mubf = ppval*this->MuCoul(tanpsi);
 		double mubf = ppval*this->MuIv(iv);
 		if (ppval < 1e-8)
 			mubf = 3.0*absu*this->pp.etaf/h; // transition to viscous fluid
@@ -465,6 +460,7 @@ public:
 		double absFriction = (1.0/rhoBulk)*(-mubf - this->tau0 + (rhoBulk-this->pp.rhof)*D*absu);
 
 		double dilatancy = 1.0/this->alpha/h*absu*tanpsi*9.0/2.0;
+		// double dilatancy = 1.0/this->alpha/h*absu*tanpsi*3.0;
 
 		double psi1 = D*P;
 		double psi5 = zeta*D - dilatancy;
@@ -526,56 +522,4 @@ public:
 		this->AlterTheta();
 	}
 };	
-
-template <unsigned N_UNSOLVED>
-class SWMuIvEqnFullViscousRhoVary : public SWMuIvEqn1DRhoVary<N_UNSOLVED>
-{
-public:
-	using SWMuIvEqn1DRhoVary<N_UNSOLVED>::SWMuIvEqn1DRhoVary;
-
-	// Redefine this here, which is terrible, but otherwise two-phase lookup prevents
-	// access of variable names from this class without explicit this->
-	enum Variables
-	{
-		H = 0,
-		HU = 1,
-		HPHI = 2,
-		PBH = 3
-	};
-
-	// Turn on diffusion terms
-	constexpr const bool HasDiffusionTerms() const
-	{
-		return true;
-	}
-
-	void XDiffusionFlux(double *xFlux, const double *u, const double *dudx, const double *dudy)
-	{
-		double h = u[H], hu = u[HU], hphi = u[HPHI], pbterm = u[PBH];
-		double phi = hphi/h;
-		double rhoBulk = this->pp.rhog*phi + this->pp.rhof*(1-phi);
-		double chi = (this->pp.rhof+3*rhoBulk)/4/rhoBulk;
-		double pb = pbterm/h+rhoBulk*this->gcostheta*chi*h;
-
-		xFlux[H] = 0.01*this->Nu() * (dudx[H]);
-		if (u[H] < this->zeroHeightThreshold)
-		{
-		xFlux[HU] = 0;
-		}
-		else
-		{
-		xFlux[HU] = this->Nu() * pow(u[H],1)*(dudx[HU]-u[HU]*dudx[H]/u[H]);
-		}
-		xFlux[HPHI] = 0.01*this->Nu() * (dudx[HPHI]);
-
-		xFlux[PBH] = 0.01*this->Nu() * (dudx[PBH]); //this->Nu() * (dudx[PBH]-pb*dudx[H]+h*rhoBulk*this->gcostheta*chi*h*dudx[H]+this->gcostheta*h*(3*(this->pp.rhog-this->pp.rhof)*dudx[HPHI]+4*this->pp.rhof*u[H]));
-	}
-
-	constexpr const double Nu()
-	{
-		return 1e-3;
-	}
-
-};
-
 #endif

@@ -1,9 +1,9 @@
 % dirname = 'channel_roll_wave/results/change_t_20_finalTheta_5_initTheta_12_lambda_20_tau0_0_4000'; %change_t_10_finalTheta_7_initTheta_10_2000
-dirname = 'four_eqn_var_rho/results/lambda_120_tau0_0_theta_5_4000'; 
+dirname = 'ive_rep_inflow/results/RunNum_3_tau0_0_theta_31_9500'; 
 dat=hs.Load(dirname);
-% hs.Plot(dat,1,[0.0,0.01])
+% hs.Plot(dat,1,[0.0,3.0])
 
-final = dat(195);
+final = dat(25);
 theta = final.params.theta;
 lambda = final.xSize;
 % rho = final.params.rho;
@@ -197,48 +197,50 @@ end
 %%
 % theta_change = 8.2;
 % pbh_exp = (final_pbh-rho.*g.*cosd(theta_change).*chi.*final_h).*final_h;
-% in_range = (final_grid>-1); % & final_grid>0.4);
-% n_wave = 1;
+in_range = (final_grid>-1); % & final_grid>0.4);
+n_wave = 1;
 % crop_out = [];
 % for k=1:n_wave
 %     crop_out = horzcat(crop_out,final_h(in_range));
 % end
-% save("four_eqn_var_rho_vis/time_d_load_h.txt","crop_out","-ascii")
+% save("four_eqn_var_rho/time_d_load_h.txt","crop_out","-ascii")
 % crop_out = [];
 % for k=1:n_wave
 %     crop_out = horzcat(crop_out,final_hu(in_range));
 % end
 % % crop_out = final_hu(in_range);
-% save("four_eqn_var_rho_vis/time_d_load_hu.txt","crop_out","-ascii")
+% save("four_eqn_var_rho/time_d_load_hu.txt","crop_out","-ascii")
 % crop_out = [];
 % for k=1:n_wave
 %     crop_out = horzcat(crop_out,final_hphi(in_range));
 % end
 % % crop_out = final_hphi(in_range);
-% save("four_eqn_var_rho_vis/time_d_load_hphi.txt","crop_out","-ascii")
+% save("four_eqn_var_rho/time_d_load_hphi.txt","crop_out","-ascii")
 % crop_out = [];
 % for k=1:n_wave
 %     crop_out = horzcat(crop_out,final_pbh(in_range));
 % end
 % % crop_out = final_pbh(in_range);
-% save("four_eqn_var_rho_vis/time_d_load_pbh.txt","crop_out","-ascii")
+% save("four_eqn_var_rho/time_d_load_pbh.txt","crop_out","-ascii")
 %%
 
 hold on
 % figure(2)
-% SetPaperSize(15,7.6)
-plot(final_grid,final_u,"DisplayName","Wave Profile")
+% SetPaperSize(10,10)
+plot(final_grid,final_h,"DisplayName","Wave Profile")
+% plot(final_grid,u_eq*ones(size(final_grid)),"DisplayName","Uniform equilibrium")
 % plot(final_grid,dilatancy,"DisplayName","Wave Profile")
 % plot(final_grid,source_pbh./final_h,"DisplayName","Wave Profile")
 % plot(final_grid(end),pb_max,"x","DisplayName","Shock condition maximum")
 % plot(final_grid,final.params.rhof.*g.*cosd(theta).*final_h)
 % ylabel("$h$ ($m$)")
-% ylabel("$u$ ($ms^{-1}$)")
+ylabel("$u$ ($ms^{-1}$)")
 % ylabel("$\phi$")
 % ylabel("$p_b$ ($Pa$)")
 % ylabel("Liquefaction ratio $\frac{p_f}{p_{tot}}$") %
 xlabel("$\xi$ (m)")
 % ylim([30,205])
-% legend("Location","best")
+legend("Location","best")
+% title("Velocity increases indefinetly")
 % title("$\theta = "+num2str(theta)+"^{\circ}$, $\tau_0 = "+num2str(tau0)+"$Pa, $t="+num2str(final.time)+"$s")
-% exp_graph(gcf,"rho_var_"+num2str(theta)+"deg_tau0_"+num2str(tau0)+"_inflow_stop_u.pdf")
+% exp_graph(gcf,"u_acc.pdf")
