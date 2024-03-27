@@ -1,9 +1,9 @@
-% dirname = 'channel_roll_wave/results/change_t_20_finalTheta_5_initTheta_12_lambda_20_tau0_0_4000'; %change_t_10_finalTheta_7_initTheta_10_2000
-dirname = 'ive_rep_inflow/results/RunNum_3_tau0_0_theta_31_9500'; 
+% dirname = 'channel_roll_wave_vis/results/tau0_0_theta_12_1500'; %change_t_10_finalTheta_7_initTheta_10_2000
+dirname = 'four_eqn_var_rho/results/lambda_200_tau0_0_theta_12_4000'; %'theta_12_1500'; %lambda_15_lambda_300_
 dat=hs.Load(dirname);
-% hs.Plot(dat,1,[0.0,3.0])
+% hs.Plot(dat,3,[0.0,0.3])
 
-final = dat(25);
+final = dat(100);
 theta = final.params.theta;
 lambda = final.xSize;
 % rho = final.params.rho;
@@ -150,7 +150,7 @@ for i=1:size(dat,2)
     tvals(i) = curr.time;
     max_pos(i) = curr_xi(h_loc);
 end
-u_w_time = (mod(diff(max_pos),lambda)+lambda)./diff(tvals);
+u_w_time = (mod(diff(max_pos),lambda))./diff(tvals);
 
 if final.nDims > 3
     t_val = sum(final_grid<35)+1;
@@ -159,9 +159,18 @@ if final.nDims > 3
         sin_ave = sin_ave + (rho(j)*final_h(j)+rho(j-1)*final_h(j-1))/2*(final_grid(j)-final_grid(j-1))/lambda;
     end
 end
-% u_w = u_w_time(end);
+u_w = u_w_time(end);
 % 
-% Q1 = final_h*u_w-final_hu;
+Q1 = final_h*u_w-final_hu;
+
+final_m = zeros(1,npts);
+int = 0;
+for i=2:npts
+    int = int+1/2*(rho(i)*final_h(i)+rho(i-1)*final_h(i-1))*(final_grid(i)-final_grid(i-1))/rho_eq/lambda;
+    final_m(i) = int;
+end
+dhdxi = diff(final_h)./diff(final_grid);
+dhdxi(npts)=dhdxi(1);
 % 
 % [h_min, min_ind] = min(final_h);
 % hu_min = final_hu(min_ind);
@@ -170,6 +179,13 @@ end
 % h_max = (-h_min + sqrt(h_min.^2+8*Q1_min^2./(h_min*g*cosd(theta))))/2;
 % if final.nDims > 2
 %     pb_max = pb_min+rho(end).*g.*cosd(theta).*chi(end).*(h_max-h_min);
+% end
+% min_len = 10;
+% num_unstab = zeros(1,npts);
+% for l=1:npts
+%     test = Fr_stab_noneq(final_h(l),final_u(l),final_phi(l),final_pb(l),theta, rho_p, rho_f, d, eta_f, alpha,tau0);
+%     num_unstab(l) = test(1);
+%     min_len = min(min_len,test(2));
 % end
 %%
 % [phi_c,rho_f,rho_p,rho,eta_f,g] = get_params_water();
@@ -199,48 +215,92 @@ end
 % pbh_exp = (final_pbh-rho.*g.*cosd(theta_change).*chi.*final_h).*final_h;
 in_range = (final_grid>-1); % & final_grid>0.4);
 n_wave = 1;
-% crop_out = [];
-% for k=1:n_wave
-%     crop_out = horzcat(crop_out,final_h(in_range));
-% end
-% save("four_eqn_var_rho/time_d_load_h.txt","crop_out","-ascii")
-% crop_out = [];
-% for k=1:n_wave
-%     crop_out = horzcat(crop_out,final_hu(in_range));
-% end
-% % crop_out = final_hu(in_range);
-% save("four_eqn_var_rho/time_d_load_hu.txt","crop_out","-ascii")
-% crop_out = [];
-% for k=1:n_wave
-%     crop_out = horzcat(crop_out,final_hphi(in_range));
-% end
-% % crop_out = final_hphi(in_range);
-% save("four_eqn_var_rho/time_d_load_hphi.txt","crop_out","-ascii")
-% crop_out = [];
-% for k=1:n_wave
-%     crop_out = horzcat(crop_out,final_pbh(in_range));
-% end
-% % crop_out = final_pbh(in_range);
-% save("four_eqn_var_rho/time_d_load_pbh.txt","crop_out","-ascii")
+crop_out = [];
+for k=1:n_wave
+    crop_out = horzcat(crop_out,final_h(in_range));
+end
+save("four_eqn_var_rho/time_d_load_h.txt","crop_out","-ascii")
+crop_out = [];
+for k=1:n_wave
+    crop_out = horzcat(crop_out,final_hu(in_range));
+end
+% crop_out = final_hu(in_range);
+save("four_eqn_var_rho/time_d_load_hu.txt","crop_out","-ascii")
+crop_out = [];
+for k=1:n_wave
+    crop_out = horzcat(crop_out,final_hphi(in_range));
+end
+% crop_out = final_hphi(in_range);
+save("four_eqn_var_rho/time_d_load_hphi.txt","crop_out","-ascii")
+crop_out = [];
+for k=1:n_wave
+    crop_out = horzcat(crop_out,final_pbh(in_range));
+end
+% crop_out = final_pbh(in_range);
+save("four_eqn_var_rho/time_d_load_pbh.txt","crop_out","-ascii")
 %%
 
 hold on
 % figure(2)
 % SetPaperSize(10,10)
-plot(final_grid,final_h,"DisplayName","Wave Profile")
+
+[h_max,max_ind] = max(final_h);
+min_ind=1;
+% max_ind = size(final_h,2);
+eff_fric_coeff = mubf./(rho.*final_h)/g/cosd(theta);
+
+% plot(final_grid(min_ind:end),final_pb(min_ind:end))
+
+iv_list = linspace(1e-6,2e-3,200);
+phi_list = phi_c./(1+sqrt(iv_list));
+rho_list = rho_p*phi_list+(1-phi_list)*rho_f;
+% plot(iv_list,mu_Iv_fn(iv_list).*(rho_list-rho_f)./rho_list,"DisplayName","$\mu(I_v)$ with buoyancy")
+% plot(iv(min_ind:max_ind),eff_fric_coeff,"DisplayName","Wave profile")
+% dirx = [-4.5,-3,-2,1,1,-2,1]*1e-5;
+% diry = [0,-1,-1,0,0,-1,0]*1e-2;
+% for k = [1,3,5,6,7]
+%     ind = sum(final_grid(1:max_ind)<(k-1)*0.1)+1;
+%     scatter(iv(ind),eff_fric_coeff(ind),'kx')
+%     txt = ['$\xi=$',num2str((k-1)*0.1),'m'];
+%     text(iv(ind)+dirx(k), eff_fric_coeff(ind)+diry(k),txt,'Interpreter','latex')
+% end
+
 % plot(final_grid,u_eq*ones(size(final_grid)),"DisplayName","Uniform equilibrium")
-% plot(final_grid,dilatancy,"DisplayName","Wave Profile")
+subplot(2,2,1)
+plot(final_grid,final_h,"DisplayName","Wave Profile")
+hold on
+xlabel("$\xi$ (m)","interpreter","latex")
+ylabel("$h$ (m)","interpreter","latex")
+subplot(2,2,2)
+plot(final_grid,final_u,"DisplayName","Wave Profile")
+hold on
+ylabel("$u$","interpreter","latex")
+xlabel("$\xi$ (m)","interpreter","latex")
+subplot(2,2,3)
+plot(final_grid,final_phi,"DisplayName","Wave Profile")
+hold on
+xlabel("$\xi$ (m)","interpreter","latex")
+ylabel("$\phi$","interpreter","latex")
+subplot(2,2,4)
+plot(final_grid,final_pb,"DisplayName","Wave Profile")
+% hold on
+ylabel("$p_b$","interpreter","latex")
+xlabel("$\xi$ (m)","interpreter","latex")
+
 % plot(final_grid,source_pbh./final_h,"DisplayName","Wave Profile")
 % plot(final_grid(end),pb_max,"x","DisplayName","Shock condition maximum")
 % plot(final_grid,final.params.rhof.*g.*cosd(theta).*final_h)
 % ylabel("$h$ ($m$)")
-ylabel("$u$ ($ms^{-1}$)")
+% ylabel("$\bar{u}$ (ms$^{-1}$)")
+% xlabel("$I_v$")
+% ylabel("Effective friction coeff.")
 % ylabel("$\phi$")
-% ylabel("$p_b$ ($Pa$)")
+% ylabel("$p_b$ (Pa)")
 % ylabel("Liquefaction ratio $\frac{p_f}{p_{tot}}$") %
 xlabel("$\xi$ (m)")
+% xlim([1.6e-3,1.9e-3])
 % ylim([30,205])
-legend("Location","best")
-% title("Velocity increases indefinetly")
+% legend("Location","best")
+% title("Periodic waveform with $h_0 = 6.1$mm")
 % title("$\theta = "+num2str(theta)+"^{\circ}$, $\tau_0 = "+num2str(tau0)+"$Pa, $t="+num2str(final.time)+"$s")
-% exp_graph(gcf,"u_acc.pdf")
+% exp_graph(gcf,"lambda_100_iv_fric_comp.pdf")

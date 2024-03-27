@@ -34,6 +34,7 @@ Give feedback
 Footer
 
 **/results/**
+**/results_ssh/**
 **/*.pdf
 
 # Matlab

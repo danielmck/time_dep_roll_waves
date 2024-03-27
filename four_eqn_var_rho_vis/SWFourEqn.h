@@ -137,6 +137,7 @@ public:
 		{
 			this->RegisterParameter("change_t", Parameter(&change_t));
 		}
+
 	}
 
 	void SwitchTheta()
@@ -301,6 +302,7 @@ public:
 
 		this->RegisterParameter("d", Parameter(&d));
 		this->RegisterParameter("alpha", Parameter(&alpha));
+
 	}
 
 protected:
@@ -311,7 +313,7 @@ protected:
 		if (ppval < 1e-8)
 			return 1e8;
 		else
-			return (3.0*this->pp.etaf)*(u/h)/(ppval); ///+this->pp.rhog*9.0*u*u*d*d
+			return (3.0*this->pp.etaf)*(u/h)/ppval;
 	}
 
 	double d, alpha;
@@ -557,23 +559,24 @@ public:
 		double chi = (this->pp.rhof+3*rhoBulk)/4/rhoBulk;
 		double pb = pbterm/h+rhoBulk*this->gcostheta*chi*h;
 
-		xFlux[H] = 0.01*this->Nu() * (dudx[H]);
+		// xFlux[H] = 0.01*this->Nu() * (dudx[H]);
 		if (u[H] < this->zeroHeightThreshold)
 		{
 		xFlux[HU] = 0;
 		}
 		else
 		{
-		xFlux[HU] = this->Nu() * pow(u[H],1)*(dudx[HU]-u[HU]*dudx[H]/u[H]);
+		xFlux[HU] = this->Nu()*(dudx[HU]-u[HU]*dudx[H]/u[H]);
 		}
-		xFlux[HPHI] = 0.01*this->Nu() * (dudx[HPHI]);
+		// xFlux[HPHI] = 0.01*this->Nu() * (dudx[HPHI]);
 
-		xFlux[PBH] = 0.01*this->Nu() * (dudx[PBH]); //this->Nu() * (dudx[PBH]-pb*dudx[H]+h*rhoBulk*this->gcostheta*chi*h*dudx[H]+this->gcostheta*h*(3*(this->pp.rhog-this->pp.rhof)*dudx[HPHI]+4*this->pp.rhof*u[H]));
+		// xFlux[PBH] = 0.01*this->Nu() * (dudx[PBH]); //this->Nu() * (dudx[PBH]-pb*dudx[H]+h*rhoBulk*this->gcostheta*chi*h*dudx[H]+this->gcostheta*h*(3*(this->pp.rhog-this->pp.rhof)*dudx[HPHI]+4*this->pp.rhof*u[H]));
 	}
 
 	constexpr const double Nu()
 	{
-		return 1e-3;
+
+		return 1.3640e-04;
 	}
 
 };

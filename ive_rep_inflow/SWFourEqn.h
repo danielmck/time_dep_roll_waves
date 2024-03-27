@@ -34,7 +34,8 @@ struct MuIvParams
 };
 // const double pi = 3.14159265358979323846264338327950288;
 // Boyer et al mu parameters, with grain densities corresponding to rock and water, roughly, and water viscosity
-MuIvParams BoyerRockWater = MuIvParams(0.32, 0.7, 0.005, 0.585, 0.585, 2500, 1000, 1.0016e-3);
+// MuIvParams BoyerRockWater = MuIvParams(0.32, 0.7, 0.005, 0.585, 0.585, 2500, 1000, 1.0016e-3);
+MuIvParams BoyerRockWater = MuIvParams(0.32, 0.7, 0.005, 0.64, 0.64, 2700, 1100, 5.0e-3);
 // MuIvParams BoyerRockWater = MuIvParams(tan(40.7*pi/180), 0.0, 0.005, 0.64, 0.64, 2700, 1100, 5.0e-3);
 
 template <unsigned DIM, unsigned N_UNSOLVED>

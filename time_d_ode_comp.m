@@ -1,8 +1,8 @@
-dirname = 'four_eqn_var_rho/results_ssh/tau0_0_theta_12_6000';
+dirname = 'channel_roll_wave/results/lambda_200_tau0_0_theta_10_4000';
 dat=hs.Load(dirname);
-h0 = 0.00729731;%;0.0084677798
-n_times = [1,3,11,51];%26,51,301,151,201
-C = viridis(size(n_times,2));
+h0 = 0.0198;
+n_times = [1,46,91,136,181];%26,51,301,151,201
+C = viridis(size(n_times,2)+1);
 hold on
 for i = 1:size(n_times,2)
     final = dat(n_times(i));
@@ -50,12 +50,12 @@ for i = 1:size(n_times,2)
 
     final_flux = get_flux(final_grid,final_h,final_u);
     [phi_c,rho_f,rho_p,rho,eta_f,g] = get_params_water();
-    [Fr_eq,Iv_eq] = crit_Iv_tau0_h(theta, rho_p, rho_f, eta_f, h0, tau0,0,true);
+    [Fr_eq,Iv_eq] = crit_Iv_tau0_h(theta, rho_p, rho_f, eta_f, h0, tau0,0,false);
     u0 = Fr_eq*sqrt(g*cosd(theta)*h0);
     base_flux = h0*u0;
     flux_ratio = final_flux/base_flux;
     
-    plot(final_grid,final_pb,"DisplayName","$t="+num2str(final.time)+"$s",'color',C(i,:))
+    plot(final_grid/h0,final_u/u0,"DisplayName","$t="+num2str(round(final.time*sqrt(g/h0),-1),'%.0f')+"$",'color',C(i,:))
 end
 % hs.Plot(dat,1,100);
 
@@ -146,20 +146,20 @@ end
 % u_flux = u_w_flux - Q1_flux./h_flux;
 
 hold on
-SetPaperSize(7.6,7.6)
+SetPaperSize(15,7.5)
 % time_d_u_comp = interp1(final_grid,final_u,xi_comp);
 % plot(final_grid,final_h,"DisplayName","ODE solution")
 
-plot(xi_comp,pb_comp,'r--',"DisplayName","ODE solution")
+plot(xi_comp/h0,u_comp/u0,'r',"DisplayName","ODE solution")
 % plot(xi_flux,u_flux,"DisplayName","Flux Matched ODE solution")
 % ylabel("$h$ ($m$)")
 % ylabel("$u$ ($ms^{-1}$)")
 % ylabel("$\phi$")
-ylabel("$p_b$ ($Pa$)")
-xlabel("$\xi$ ($m$)")
+ylabel("$\bar{u}$")
+xlabel("$\xi$")
 % ylim([0,1.8])
 % legend("Location","best")
 % ax = gca;
 % ax.YAxis.Exponent = 0;
-title("$Fr = 0.8$, $\theta = "+num2str(theta)+"^{\circ}$, $\tau_0 = "+num2str(tau0)+"Pa$")
-exp_graph(gcf,"report_time_conv_full_pb.pdf")
+% title("$Fr = 1.0$, $\theta = "+num2str(theta)+"^{\circ}$, $\tau_0 = "+num2str(tau0)+"Pa$")
+exp_graph(gcf,"two_eqn_conv_u.pdf")

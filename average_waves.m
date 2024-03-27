@@ -26,7 +26,7 @@ function [t_vals, ave] = average_waves(dat)
         final_psi1 = final_phi./final_rho./final_h.*final_pe;
         sin_ave = 0;
         for j = 2:npts
-            sin_ave = sin_ave + (final_psi1(j)+final_psi1(j-1))/2*(final_grid(j)-final_grid(j-1))/lambda;
+            sin_ave = sin_ave + (final_flux(j)+final_flux(j-1))/2*(final_grid(j)-final_grid(j-1))/lambda;
         end
         ave(i) = sin_ave;
     end

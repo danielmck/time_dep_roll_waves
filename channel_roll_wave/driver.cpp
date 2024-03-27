@@ -27,13 +27,13 @@ public:
 
 	void Run(int n)
 	{
-		Eqn eqn(9.81, 12.0, 0.0,5.0,20.0);
+		Eqn eqn(9.81, 12.0, 0.0);
 		eqn.SetMuIvParams(BoyerRockWater);
 		eqn.EnableStoppedMaterialHandling();
-		// eqn.EnableInDirectoryName("theta");
-		eqn.EnableInDirectoryName("initTheta");
-		eqn.EnableInDirectoryName("finalTheta");
-		eqn.EnableInDirectoryName("change_t");
+		eqn.EnableInDirectoryName("theta");
+		// eqn.EnableInDirectoryName("initTheta");
+		// eqn.EnableInDirectoryName("finalTheta");
+		// eqn.EnableInDirectoryName("change_t");
 
 		eqn.EnableInDirectoryName("tau0");
 		double lambda_in =  domainLength/h0;
@@ -48,18 +48,18 @@ public:
 		solver.SetPeriodicBoundaryConditions();
 
 		using namespace std::placeholders;
-		solver.LoadInitialConditions("time_d_load_h.txt",0);
-		solver.LoadInitialConditions("time_d_load_hu.txt",1);
-		// solver.SetInitialConditions([this,u0](double *u, double x, double y)
-		// 							{
-		// 								u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
-		// 								u[Eqn::HU]=h0*u0;
-		// 							});
+		// solver.LoadInitialConditions("time_d_load_h.txt",0);
+		// solver.LoadInitialConditions("time_d_load_hu.txt",1);
+		solver.SetInitialConditions([this,u0](double *u, double x, double y)
+									{
+										u[Eqn::H]=h0*(1+1e-2*sin(2.0*M_PI*x/domainLength));
+										u[Eqn::HU]=h0*u0;
+									});
 
 		// solver.Run(10.0,10); // Integrate to t=100.0, outputting 100 times
 		// Eqn *eqnpntr = dynamic_cast<Eqn *>(solver.EquationPtr());
 		// eqnpntr->SwitchTheta();
-		solver.Run(30.0,1000); // Integrate to t=100.0, outputting 100 times
+		solver.Run(50.0,200); // Integrate to t=100.0, outputting 100 times
 	}
 private:
 	double u0, h0, domainLength;
@@ -68,10 +68,10 @@ private:
 int main(int argc, char *argv[])
 {
 	feenableexcept( FE_INVALID | FE_DIVBYZERO); 
-	double lambda_ = std::stod(argv[1]);
-	int npts = 4000;
+	// double lambda_ = std::stod(argv[1]);
+	int npts = 1500;
 	{
-		ChannelRollWave crw(0.0061,0.0061*lambda_);
+		ChannelRollWave crw(0.0076,0.0076*15);
 		crw.Run(npts);
 	}
 

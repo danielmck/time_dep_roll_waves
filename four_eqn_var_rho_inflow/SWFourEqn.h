@@ -128,7 +128,7 @@ public:
 		this->RegisterParameter("theta", Parameter(&thetaDeg));
 		this->RegisterParameter("g", Parameter(&g));
 		this->RegisterParameter("tau0", Parameter(&tau0));
-		if (finalThetaDeg >= 0.0)
+		if (finalThetaDeg_ >= 0.0)
 		{
 			this->RegisterParameter("initTheta", Parameter(&initThetaDeg));
 			this->RegisterParameter("finalTheta", Parameter(&finalThetaDeg));
@@ -252,20 +252,20 @@ public:
 		rho_eq = phi*this->pp.rhog + (1-phi)*this->pp.rhof;
 		chi_eq = (this->pp.rhof+3.0*rho_eq)/4.0/rho_eq;
 		u = UFromIv(Iv_eq,h,(rho_eq-this->pp.rhof)*this->gcostheta*h);
-		double pb = this->pp.rhof*this->gcostheta*h*1.1;
+		double pb = this->pp.rhof*this->gcostheta*h;
 		pbterm = h*(pb-rho_eq*this->gcostheta*chi_eq*h);
 	}
 
 	void SteadyUniformUTheta(double alt_theta, double h, double &u, double &phi, double &pbterm)
 	{
-		const double pi = 3.14159265358979323846264338327950288;
 		double max=1e2, min=0, Iv_eq, phi_eq, rho_eq, P_eq, alt_gct = this->g*cos(alt_theta*pi/180.0), chi_eq;
+		const double pi = 3.14159265358979323846264338327950288;
 		while (max-min > 1e-14)
 		{
 			phi_eq = this->pp.phim/(1+sqrt((max+min)/2.0));
 			rho_eq = phi_eq*this->pp.rhog + (1-phi_eq)*this->pp.rhof;
 			P_eq = (rho_eq-this->pp.rhof)/rho_eq;
-			((this->MuIv(0.5*(max+min))-tan(alt_theta*pi/180.0)/P_eq+this->tau0/((rho_eq-this->pp.rhof)*alt_gct*h)>0)?max:min)=0.5*(max+min);
+			((this->MuIv(0.5*(max+min))-tan(alt_theta*pi/180.0)/P_eq+this->tau0/((rho_eq-this->pp.rhof)*this->gcostheta*h)>0)?max:min)=0.5*(max+min);
 		}
 		Iv_eq = 0.5*(max+min);
 		phi = this->pp.phim/(1+sqrt(Iv_eq));

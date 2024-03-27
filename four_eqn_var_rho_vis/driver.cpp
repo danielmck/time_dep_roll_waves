@@ -57,7 +57,7 @@ public:
 										u[VisEqn::PBH]=pbterm0;
 									});
 
-		solver.Run(100.0,100); // Integrate to t=100.0, outputting 100 times
+		solver.Run(200.0,100); // Integrate to t=100.0, outputting 100 times
 	}
 private:
 	double u0, h0, domainLength;
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
 {
 	feenableexcept( FE_INVALID | FE_DIVBYZERO); 
 
-	int npts = 4100;
+	int npts = 1500;
 	{
-		ChannelRollWave crw(0.0061,1.7642);
+		ChannelRollWave crw(0.0073,0.0073*15);
 		crw.Run(npts);
 	}
 
