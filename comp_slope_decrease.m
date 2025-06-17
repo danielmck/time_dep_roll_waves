@@ -1,3 +1,5 @@
+% Code for comparing the periodic box case when the slope angle is varied in time. The angle is decreased from an initial
+% value theta to finalTheta over a time of change_t
 n_run = 11;
 slows = zeros(n_run,n_run);
 for i=1:n_run
