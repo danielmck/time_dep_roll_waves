@@ -1,4 +1,5 @@
 function comp_wave_unif
+    % Compares the results from the wave to the uniform state that the model starts at
     dirname = 'four_eqn_var_rho/results/change_t_30_finalTheta_7.6_initTheta_10_4000'; %';finalTheta_8_initTheta_10_tau0_0_2100 tau0_0_theta_8_6000
     dat=hs.Load(dirname);
     [phi_c,rho_f,rho_p,~,eta_f,g] = get_params_water();

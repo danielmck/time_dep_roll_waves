@@ -1,3 +1,4 @@
+% Compares the waves created with the time dependent solver to those from the ode solver
 dirname = 'four_eqn_var_rho/results_ssh/limiter_MinMod2_tau0_0_theta_12_6000';
 dat=hs.Load(dirname);
 final = dat(end);

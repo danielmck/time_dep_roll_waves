@@ -1,3 +1,4 @@
+# Automates the running of multiple final slope angles and periods of change of slope angle
 import os
 import time
 # time.sleep(21600)

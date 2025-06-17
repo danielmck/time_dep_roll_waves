@@ -1,3 +1,5 @@
+% File used for examining results and creating figures
+
 % dirname = 'channel_roll_wave_vis/results/tau0_0_theta_12_1500'; %change_t_10_finalTheta_7_initTheta_10_2000
 dirname = 'four_eqn_var_rho/results/lambda_200_tau0_0_theta_12_4000'; %'theta_12_1500'; %lambda_15_lambda_300_
 dat=hs.Load(dirname);

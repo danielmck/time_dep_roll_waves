@@ -2,12 +2,15 @@
 #define SWPOULIQUEN_EQN_H
 
 /*
-  1-D Shallow water equations, MuIv drag
+  1-D Shallow water equations with varying fluid pressure and particle volume fraction, MuIv drag
 
-  dh/dt + d/dx (hu) = 0
+  dh/dt + d/dx (hu) = P D
 
-  d/dt (hu) + d/dx (hu^2 + (g cos(theta)/2) h^2) = h g sin(theta) - mu g h cos(theta) u/|u|
+  d/dt (hu) + d/dx (hu^2 + (g cos(theta)/2) h^2) = h g sin(theta) - mu p_p^b u/|u| + (rho-rho_f) D u/|u|
 
+  d/dt (phi h) + d/dx (h phi u) = - phi rho_f/rho D
+
+  d p_f^b/dt + d/dx (g cos(theta) chi rho h + p_f^b u) = zeta D -3 alpha u/h tan psi
 */
 
 

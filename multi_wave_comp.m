@@ -1,3 +1,4 @@
+% Compares the flux of a range of different simulations
 flux_vals = zeros(50,301);
 for i=11:50
     lambda=10*i;

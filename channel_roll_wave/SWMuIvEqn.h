@@ -156,6 +156,7 @@ public:
 		}
 	}
 
+	// Alters the value of slope angle theta over time
 	void AlterTheta()
 	{
 		double t = solverPtr->Time();
@@ -191,6 +192,7 @@ public:
 	HyperbolicSolver *solverPtr;
 
 protected:
+	// Friction coefficient based on viscous number Iv
 	double MuIv(double Iv)
 	{
 		if (Iv<1e-10)

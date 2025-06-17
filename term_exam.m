@@ -1,3 +1,4 @@
+% Debugging code recreating the terms that have been used in the model
 dirname = 'four_eqn_var_rho/results/lambda_300_theta_12_3000'; 
 dat=hs.Load(dirname);
 % hs.Plot(dat,1,[0.0,3.0])50

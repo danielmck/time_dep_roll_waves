@@ -1,3 +1,4 @@
+# Automates running multiple simulations at different slope angles
 import os
 n_run = 18;
 os.system('make')

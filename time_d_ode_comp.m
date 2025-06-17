@@ -1,3 +1,4 @@
+% Compares the waves created with the time dependent solver to those from the ode solver
 dirname = 'channel_roll_wave/results/lambda_200_tau0_0_theta_10_4000';
 dat=hs.Load(dirname);
 h0 = 0.0198;
