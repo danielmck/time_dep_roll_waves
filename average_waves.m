@@ -1,3 +1,4 @@
+# Averages the periodic waves over the length for comparison with the uniform case
 function [t_vals, ave] = average_waves(dat)
     ntimes = size(dat,2);
     ave = zeros(1,ntimes);
